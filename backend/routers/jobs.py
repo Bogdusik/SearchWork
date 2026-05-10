@@ -1,3 +1,51 @@
-from fastapi import APIRouter
+import asyncio
+from fastapi import APIRouter, Query, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from database import get_db
+from models import CVProfile, SavedJob
+from schemas import JobOut
+from services import adzuna_service, reed_service
+from services.ai_service import score_job_match
 
-router = APIRouter(prefix="/jobs", tags=["jobs"])
+router = APIRouter()
+
+async def get_cv_profile(db: AsyncSession) -> list[str]:
+    result = await db.execute(select(CVProfile).order_by(CVProfile.id.desc()).limit(1))
+    profile = result.scalar_one_or_none()
+    if not profile:
+        return []
+    return profile.skills + profile.keywords
+
+@router.get("/jobs", response_model=list[JobOut])
+async def search_jobs(
+    q: str = Query(..., min_length=1),
+    db: AsyncSession = Depends(get_db),
+):
+    cv_skills = await get_cv_profile(db)
+
+    adzuna_task = asyncio.create_task(adzuna_service.search_jobs(q))
+    reed_task = asyncio.create_task(reed_service.search_jobs(q))
+    adzuna_results, reed_results = await asyncio.gather(adzuna_task, reed_task, return_exceptions=True)
+    adzuna_results = adzuna_results if isinstance(adzuna_results, list) else []
+    reed_results = reed_results if isinstance(reed_results, list) else []
+    all_jobs = adzuna_results + reed_results
+
+    if not all_jobs:
+        return []
+
+    scores = await asyncio.gather(*[
+        score_job_match(cv_skills, job["description"]) for job in all_jobs
+    ])
+
+    saved = []
+    for job_data, score in zip(all_jobs, scores):
+        job = SavedJob(**job_data, match_score=score)
+        db.add(job)
+        saved.append(job)
+
+    await db.commit()
+    for job in saved:
+        await db.refresh(job)
+
+    return sorted(saved, key=lambda j: j.match_score, reverse=True)
