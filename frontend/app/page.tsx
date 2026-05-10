@@ -7,7 +7,7 @@ export default async function DashboardPage() {
 
   const totalApplications = applications.filter(a => a.status !== 'saved').length
   const responses = applications.filter(a => ['interview', 'offer', 'rejected'].includes(a.status)).length
-  const bestMatch = applications.length > 0 ? Math.max(...applications.map(a => a.job.match_score)) : 0
+  const bestMatch = applications.length > 0 ? Math.max(0, ...applications.map(a => a.job.match_score ?? 0)) : 0
 
   return (
     <div className="max-w-2xl">
