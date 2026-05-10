@@ -26,12 +26,14 @@ class SavedJob(Base):
     description: Mapped[str] = mapped_column(Text)
     match_score: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    application: Mapped["Application | None"] = relationship("Application", back_populates="job", uselist=False)
+    application: Mapped["Application | None"] = relationship(
+        "Application", back_populates="job", uselist=False, cascade="all, delete-orphan"
+    )
 
 class Application(Base):
     __tablename__ = "applications"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    job_id: Mapped[int] = mapped_column(Integer, ForeignKey("saved_jobs.id"))
+    job_id: Mapped[int] = mapped_column(Integer, ForeignKey("saved_jobs.id", ondelete="CASCADE"))
     status: Mapped[str] = mapped_column(String, default="saved")
     applied_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
