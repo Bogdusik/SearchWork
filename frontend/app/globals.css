@@ -128,3 +128,21 @@
     @apply font-sans;
   }
 }
+
+/* SearchWork theme overrides */
+:root {
+  --background: #030303;
+  --foreground: #ffffff;
+}
+
+body {
+  background: #030303;
+  color: white;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+}
