@@ -34,14 +34,28 @@ async def search_jobs(
     if not all_jobs:
         return []
 
-    scores = await asyncio.gather(*[
-        score_job_match(cv_skills, job["description"]) for job in all_jobs
-    ])
+    if not cv_skills:
+        scores = [0] * len(all_jobs)
+    else:
+        scores = list(await asyncio.gather(*[
+            score_job_match(cv_skills, job["description"]) for job in all_jobs
+        ], return_exceptions=True))
+        scores = [s if isinstance(s, int) else 0 for s in scores]
 
     saved = []
     for job_data, score in zip(all_jobs, scores):
-        job = SavedJob(**job_data, match_score=score)
-        db.add(job)
+        existing = await db.execute(
+            select(SavedJob).where(
+                SavedJob.external_id == job_data["external_id"],
+                SavedJob.source == job_data["source"]
+            )
+        )
+        job = existing.scalar_one_or_none()
+        if job is None:
+            job = SavedJob(**job_data, match_score=score)
+            db.add(job)
+        else:
+            job.match_score = score
         saved.append(job)
 
     await db.commit()
