@@ -1,5 +1,8 @@
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel
+
+STATUS = Literal["saved", "applied", "interview", "offer", "rejected"]
 
 class CVProfileOut(BaseModel):
     id: int
@@ -35,7 +38,7 @@ class ApplicationOut(BaseModel):
 
 class ApplicationCreate(BaseModel):
     job_id: int
-    status: str = "saved"
+    status: STATUS = "saved"
 
 class ApplicationUpdate(BaseModel):
-    status: str
+    status: STATUS
