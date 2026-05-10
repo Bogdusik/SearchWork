@@ -16,23 +16,34 @@ const matchColor = (score: number) =>
 export function JobCard({ job }: JobCardProps) {
   const [status, setStatus] = useState<'idle' | 'saved' | 'applied'>('idle')
   const [actionError, setActionError] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
   const apply = async () => {
+    if (actionLoading) return
+    setActionLoading(true)
+    setActionError(null)
     try {
       await api.applications.create(job.id, 'applied')
       setStatus('applied')
-      window.open(job.url, '_blank')
+      if (job.url) window.open(job.url, '_blank')
     } catch {
       setActionError('Could not save application. Please try again.')
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const save = async () => {
+    if (actionLoading) return
+    setActionLoading(true)
+    setActionError(null)
     try {
       await api.applications.create(job.id, 'saved')
       setStatus('saved')
     } catch {
       setActionError('Could not save job. Please try again.')
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -62,10 +73,18 @@ export function JobCard({ job }: JobCardProps) {
           <span className="text-xs text-white/40">Saved</span>
         ) : (
           <>
-            <button onClick={apply} className="px-4 py-1.5 rounded-lg text-xs bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 transition-colors">
-              Apply Now
+            <button
+              onClick={apply}
+              disabled={actionLoading}
+              className="px-4 py-1.5 rounded-lg text-xs bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 transition-colors"
+            >
+              {actionLoading ? '...' : 'Apply Now'}
             </button>
-            <button onClick={save} className="px-4 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white/40 hover:text-white/60 transition-colors">
+            <button
+              onClick={save}
+              disabled={actionLoading}
+              className="px-4 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-40 transition-colors"
+            >
               Save
             </button>
           </>

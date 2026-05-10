@@ -15,6 +15,7 @@ export default function SearchPage() {
   const handleSearch = async (query: string) => {
     setLoading(true)
     setError(null)
+    setJobs([])
     try {
       const results = await api.jobs.search(query)
       setJobs(results)
