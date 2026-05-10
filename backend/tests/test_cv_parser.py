@@ -8,17 +8,17 @@ def test_extract_text_returns_string():
     assert isinstance(result, str)
 
 
-def test_extract_text_not_empty_for_valid_pdf():
+def test_extract_text_does_not_crash_on_valid_pdf():
+    """Parser must not raise for a valid PDF — returning empty string is acceptable."""
     with open("tests/fixtures/sample_cv.pdf", "rb") as f:
-        result = extract_text_from_pdf(f.read())
-    # pdfminer fallback should extract something from a valid PDF
-    assert len(result.strip()) >= 0  # at minimum it doesn't crash
+        pdf_bytes = f.read()
+    # This call must not raise
+    result = extract_text_from_pdf(pdf_bytes)
+    assert isinstance(result, str)
 
 
-def test_extract_text_raises_or_returns_empty_for_garbage():
+def test_extract_text_returns_string_for_garbage_input():
+    """Parser must return a string (possibly empty) rather than raising for invalid input."""
     garbage = b"not a pdf at all"
-    try:
-        result = extract_text_from_pdf(garbage)
-        assert isinstance(result, str)
-    except Exception:
-        pass  # Raising is also acceptable
+    result = extract_text_from_pdf(garbage)
+    assert isinstance(result, str)
