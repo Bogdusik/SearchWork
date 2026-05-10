@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from database import get_db
 from models import CVProfile
@@ -37,23 +37,15 @@ async def upload_cv(
     raw_text = extract_text_from_pdf(pdf_bytes)
     extracted = await extract_cv_skills(raw_text)
 
-    # Upsert: keep only one CV profile (the latest)
-    result = await db.execute(select(CVProfile).limit(1))
-    profile = result.scalar_one_or_none()
-
-    if profile is None:
-        profile = CVProfile(
-            raw_text=raw_text,
-            skills=extracted.get("skills", []),
-            job_titles=extracted.get("job_titles", []),
-            keywords=extracted.get("keywords", []),
-        )
-        db.add(profile)
-    else:
-        profile.raw_text = raw_text
-        profile.skills = extracted.get("skills", [])
-        profile.job_titles = extracted.get("job_titles", [])
-        profile.keywords = extracted.get("keywords", [])
+    # Delete all existing profiles, then insert a fresh one
+    await db.execute(delete(CVProfile))
+    profile = CVProfile(
+        raw_text=raw_text,
+        skills=extracted.get("skills", []),
+        job_titles=extracted.get("job_titles", []),
+        keywords=extracted.get("keywords", []),
+    )
+    db.add(profile)
 
     await db.commit()
     await db.refresh(profile)
