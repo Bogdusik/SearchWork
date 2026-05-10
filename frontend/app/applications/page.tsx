@@ -29,6 +29,12 @@ export default function ApplicationsPage() {
     return c
   }, [applications])
 
+  const handleStatusChange = (id: number, newStatus: ApplicationStatus) => {
+    setApplications(prev =>
+      prev.map(app => app.id === id ? { ...app, status: newStatus } : app)
+    )
+  }
+
   const filtered = filter === 'all' ? applications : applications.filter(a => a.status === filter)
 
   return (
@@ -49,7 +55,7 @@ export default function ApplicationsPage() {
             {filtered.length === 0 ? (
               <p className="text-white/30 text-sm">No applications here yet.</p>
             ) : (
-              filtered.map((app) => <ApplicationRow key={app.id} application={app} />)
+              filtered.map((app) => <ApplicationRow key={app.id} application={app} onStatusChange={handleStatusChange} />)
             )}
           </div>
         </>
