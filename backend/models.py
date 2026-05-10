@@ -1,15 +1,39 @@
 from datetime import datetime
-from sqlalchemy import Integer, String, Text, ARRAY, DateTime, ForeignKey, func
+import json
+from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, func
+from sqlalchemy import TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
+
+
+class JSONList(TypeDecorator):
+    """Stores a list of strings as a JSON-encoded TEXT column.
+
+    Works transparently on both SQLite (tests) and PostgreSQL (production).
+    Using JSON-encoded text avoids the PostgreSQL-only ARRAY type, which
+    aiosqlite cannot handle during test table creation.
+    """
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return "[]"
+        return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []
+        return json.loads(value)
+
 
 class CVProfile(Base):
     __tablename__ = "cv_profiles"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     raw_text: Mapped[str] = mapped_column(Text)
-    skills: Mapped[list[str]] = mapped_column(ARRAY(String))
-    job_titles: Mapped[list[str]] = mapped_column(ARRAY(String))
-    keywords: Mapped[list[str]] = mapped_column(ARRAY(String))
+    skills: Mapped[list[str]] = mapped_column(JSONList)
+    job_titles: Mapped[list[str]] = mapped_column(JSONList)
+    keywords: Mapped[list[str]] = mapped_column(JSONList)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
 class SavedJob(Base):
