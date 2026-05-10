@@ -25,6 +25,9 @@ async def create_application(body: ApplicationCreate, db: AsyncSession = Depends
     job = await db.get(SavedJob, body.job_id)
     if not job:
         raise HTTPException(404, "Job not found")
+    existing = await db.execute(select(Application).where(Application.job_id == body.job_id))
+    if existing.scalar_one_or_none():
+        raise HTTPException(409, "Application for this job already exists")
     applied_at = datetime.now(timezone.utc) if body.status == "applied" else None
     app = Application(job_id=body.job_id, status=body.status, applied_at=applied_at)
     db.add(app)
@@ -44,11 +47,13 @@ async def update_application(app_id: int, body: ApplicationUpdate, db: AsyncSess
     if not app:
         raise HTTPException(404, "Application not found")
     app.status = body.status
-    if body.status == "applied" and not app.applied_at:
-        app.applied_at = datetime.now(timezone.utc)
+    if body.status == "applied":
+        if not app.applied_at:
+            app.applied_at = datetime.now(timezone.utc)
+    else:
+        app.applied_at = None
     await db.commit()
-    await db.refresh(app)
-    # Re-query with selectinload to ensure job relationship is loaded after refresh
+    # Re-query with selectinload to ensure job relationship is loaded
     result = await db.execute(
         select(Application).options(selectinload(Application.job)).where(Application.id == app_id)
     )
