@@ -22,9 +22,10 @@ const STATUS_COLORS: Record<ApplicationStatus, string> = {
 
 interface ApplicationRowProps {
   application: Application
+  onStatusChange?: (id: number, newStatus: ApplicationStatus) => void
 }
 
-export function ApplicationRow({ application }: ApplicationRowProps) {
+export function ApplicationRow({ application, onStatusChange }: ApplicationRowProps) {
   const [status, setStatus] = useState<ApplicationStatus>(application.status as ApplicationStatus)
   const [updating, setUpdating] = useState(false)
 
@@ -34,6 +35,7 @@ export function ApplicationRow({ application }: ApplicationRowProps) {
     setStatus(newStatus)
     try {
       await api.applications.updateStatus(application.id, newStatus)
+      onStatusChange?.(application.id, newStatus)
     } catch {
       setStatus(application.status as ApplicationStatus)
     } finally {

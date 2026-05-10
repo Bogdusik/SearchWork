@@ -2,6 +2,7 @@ import type { ApplicationStatus } from '@/types'
 
 const TABS: { value: ApplicationStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
+  { value: 'saved', label: 'Saved' },
   { value: 'applied', label: 'Applied' },
   { value: 'interview', label: 'Interview' },
   { value: 'offer', label: 'Offer' },
