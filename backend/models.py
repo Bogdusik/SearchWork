@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
-from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, func
+from sqlalchemy import Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy import TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
@@ -34,7 +34,7 @@ class CVProfile(Base):
     skills: Mapped[list[str]] = mapped_column(JSONList)
     job_titles: Mapped[list[str]] = mapped_column(JSONList)
     keywords: Mapped[list[str]] = mapped_column(JSONList)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
@@ -49,7 +49,7 @@ class SavedJob(Base):
     url: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(Text)
     match_score: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     application: Mapped["Application | None"] = relationship(
         "Application", back_populates="job", uselist=False, cascade="all, delete-orphan"
     )
@@ -61,5 +61,5 @@ class Application(Base):
     status: Mapped[str] = mapped_column(String, default="saved")
     applied_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     job: Mapped["SavedJob"] = relationship("SavedJob", back_populates="application")
