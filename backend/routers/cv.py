@@ -25,11 +25,7 @@ async def upload_cv(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a PDF CV, extract text and skills via AI, and upsert the profile."""
-    if file.content_type not in ("application/pdf", "application/octet-stream"):
-        # Be permissive — also accept octet-stream for clients that don't set mime type correctly
-        pass
-
+    """Upload a PDF CV, extract text and skills via AI, and replace any existing profile."""
     pdf_bytes = await file.read()
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
