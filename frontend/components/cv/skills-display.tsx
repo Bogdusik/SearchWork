@@ -28,7 +28,10 @@ export function SkillsDisplay({ profile }: SkillsDisplayProps) {
         </div>
       </div>
       <p className="text-xs text-white/20">
-        Last updated: {new Date(profile.updated_at).toLocaleDateString('en-GB')}
+        {(() => {
+          const d = new Date(profile.updated_at)
+          return isNaN(d.getTime()) ? null : `Last updated: ${d.toLocaleDateString('en-GB')}`
+        })()}
       </p>
     </div>
   )

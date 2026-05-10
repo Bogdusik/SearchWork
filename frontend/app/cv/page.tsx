@@ -8,9 +8,12 @@ import { SkillsDisplay } from '@/components/cv/skills-display'
 
 export default function CVPage() {
   const [profile, setProfile] = useState<CVProfile | null>(null)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
-    api.cv.get().then((p) => setProfile(p)).catch(() => null)
+    api.cv.get()
+      .then((p) => setProfile(p))
+      .catch(() => setFetchError(true))
   }, [])
 
   return (
@@ -19,7 +22,10 @@ export default function CVPage() {
       <h1 className="text-3xl font-bold bg-gradient-to-b from-white to-white/75 bg-clip-text text-transparent mb-8">
         Upload Your Resume
       </h1>
-      <UploadZone onUpload={setProfile} />
+      {fetchError && (
+        <p className="text-rose-400 text-xs mb-4">Could not load CV profile. You can still upload a new one.</p>
+      )}
+      <UploadZone onUpload={(p) => { setProfile(p); setFetchError(false) }} />
       {profile && <SkillsDisplay profile={profile} />}
     </div>
   )
