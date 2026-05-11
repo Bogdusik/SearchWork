@@ -25,21 +25,34 @@ export const api = {
         body: form,
       })
     },
+    review: (targetRole: string) =>
+      req<import('@/types').CVReview>('/cv/review', {
+        method: 'POST',
+        body: JSON.stringify({ target_role: targetRole }),
+      }),
   },
   jobs: {
-    search: (q: string) => req<import('@/types').Job[]>(`/jobs?q=${encodeURIComponent(q)}`),
+    search: (q: string, locations: string[] = []) => {
+      const params = new URLSearchParams({ q })
+      locations.forEach(l => params.append('locations', l))
+      return req<import('@/types').JobSearchResult[]>(`/jobs?${params}`)
+    },
   },
   applications: {
     list: () => req<import('@/types').Application[]>('/applications'),
-    create: (jobId: number, status: import('@/types').ApplicationStatus) =>
+    create: (job: import('@/types').JobSearchResult, status: import('@/types').ApplicationStatus) =>
       req<import('@/types').Application>('/applications', {
         method: 'POST',
-        body: JSON.stringify({ job_id: jobId, status }),
+        body: JSON.stringify({ job, status }),
       }),
     updateStatus: (id: number, status: import('@/types').ApplicationStatus) =>
       req<import('@/types').Application>(`/applications/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
+      }),
+    delete: (id: number) =>
+      fetch(`${BASE}/applications/${id}`, { method: 'DELETE' }).then(r => {
+        if (!r.ok) throw new Error(`API error ${r.status}`)
       }),
   },
 }
