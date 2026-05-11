@@ -1,11 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api } from '@/lib/api'
 import type { CVProfile, CVReview, CVReviewItem, PriorityItem } from '@/types'
 
 interface CvReviewProps {
   profile: CVProfile | null
+  review: CVReview | null
+  targetRole: string
+  onTargetRoleChange: (v: string) => void
+  onReviewChange: (r: CVReview | null) => void
 }
 
 const impactColour: Record<PriorityItem['impact'], string> = {
@@ -13,6 +17,32 @@ const impactColour: Record<PriorityItem['impact'], string> = {
   High: 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20',
   Medium: 'text-amber-300 bg-amber-500/10 border-amber-500/20',
   Low: 'text-white/40 bg-white/5 border-white/10',
+}
+
+const STEPS = [
+  { label: 'Reading your CV…', pct: 15 },
+  { label: 'Checking structure & ATS compatibility…', pct: 35 },
+  { label: 'Identifying critical issues…', pct: 55 },
+  { label: 'Generating priority actions…', pct: 75 },
+  { label: 'Finalising review…', pct: 90 },
+]
+
+function AnalysisProgress({ progress, label }: { progress: number; label: string }) {
+  return (
+    <div className="glass p-6 space-y-4">
+      <div className="flex justify-between items-center mb-1">
+        <p className="text-xs text-white/50">{label}</p>
+        <p className="text-xs text-indigo-400 font-medium tabular-nums">{progress}%</p>
+      </div>
+      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <p className="text-center text-xs text-white/30">Claude is reviewing your CV — this takes ~15 seconds</p>
+    </div>
+  )
 }
 
 function IssueCard({
@@ -43,11 +73,16 @@ function IssueCard({
   )
 }
 
-export function CvReview({ profile }: CvReviewProps) {
-  const [targetRole, setTargetRole] = useState('')
+export function CvReview({ profile, review, targetRole, onTargetRoleChange, onReviewChange }: CvReviewProps) {
   const [loading, setLoading] = useState(false)
-  const [review, setReview] = useState<CVReview | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [stepLabel, setStepLabel] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [])
 
   if (!profile) {
     return (
@@ -57,16 +92,37 @@ export function CvReview({ profile }: CvReviewProps) {
     )
   }
 
+  function startProgress() {
+    setProgress(0)
+    setStepLabel(STEPS[0].label)
+    STEPS.forEach((step, i) => {
+      timerRef.current = setTimeout(() => {
+        setProgress(step.pct)
+        setStepLabel(step.label)
+      }, i * 3000)
+    })
+  }
+
+  function finishProgress() {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setProgress(100)
+  }
+
   async function handleAnalyse() {
     setLoading(true)
     setError(null)
-    setReview(null)
+    startProgress()
     try {
       const result = await api.cv.review(targetRole)
-      setReview(result)
-    } catch {
-      setError('Analysis failed. Please try again.')
-    } finally {
+      finishProgress()
+      setTimeout(() => {
+        onReviewChange(result)
+        setLoading(false)
+      }, 400)
+    } catch (e: unknown) {
+      finishProgress()
+      const msg = e instanceof Error ? e.message : 'Analysis failed. Please try again.'
+      setError(msg)
       setLoading(false)
     }
   }
@@ -81,7 +137,7 @@ export function CvReview({ profile }: CvReviewProps) {
           <input
             type="text"
             value={targetRole}
-            onChange={(e) => setTargetRole(e.target.value)}
+            onChange={(e) => onTargetRoleChange(e.target.value)}
             placeholder="e.g. Backend Engineer"
             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50"
           />
@@ -96,12 +152,7 @@ export function CvReview({ profile }: CvReviewProps) {
         </div>
       )}
 
-      {loading && (
-        <div className="glass p-8 text-center">
-          <div className="inline-block w-5 h-5 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin mb-3" />
-          <p className="text-white/40 text-sm">Claude is reviewing your CV…</p>
-        </div>
-      )}
+      {loading && <AnalysisProgress progress={progress} label={stepLabel} />}
 
       {review && (
         <>
@@ -142,7 +193,7 @@ export function CvReview({ profile }: CvReviewProps) {
           </div>
 
           <button
-            onClick={() => { setReview(null); setTargetRole('') }}
+            onClick={() => { onReviewChange(null); onTargetRoleChange('') }}
             className="w-full py-2 rounded-lg text-sm font-medium border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-colors"
           >
             Analyse Again

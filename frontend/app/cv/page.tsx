@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
-import type { CVProfile } from '@/types'
+import type { CVProfile, CVReview } from '@/types'
 import { UploadZone } from '@/components/cv/upload-zone'
 import { SkillsDisplay } from '@/components/cv/skills-display'
 import { CvReview } from '@/components/cv/cv-review'
@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 export default function CVPage() {
   const [profile, setProfile] = useState<CVProfile | null>(null)
   const [fetchError, setFetchError] = useState(false)
+  const [review, setReview] = useState<CVReview | null>(null)
+  const [targetRole, setTargetRole] = useState('')
 
   useEffect(() => {
     api.cv.get()
@@ -40,7 +42,13 @@ export default function CVPage() {
         </TabsContent>
 
         <TabsContent value="analysis">
-          <CvReview profile={profile} />
+          <CvReview
+            profile={profile}
+            review={review}
+            targetRole={targetRole}
+            onTargetRoleChange={setTargetRole}
+            onReviewChange={setReview}
+          />
         </TabsContent>
       </Tabs>
     </div>
