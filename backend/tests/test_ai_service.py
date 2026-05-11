@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from services.ai_service import extract_cv_skills, score_job_match
+from services.ai_service import extract_cv_skills, score_job_match, generate_cv_review
 
 
 @pytest.mark.asyncio
@@ -54,3 +54,34 @@ async def test_score_job_match_clamps_out_of_range():
         score = await score_job_match(cv_skills=["Python"], job_description="Python role")
 
     assert score == 100
+
+
+@pytest.mark.asyncio
+async def test_generate_cv_review_returns_structured_data():
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text='''{
+        "summary": "Solid foundation.",
+        "critical_issues": [{"title": "No email", "detail": "Add plain-text email."}],
+        "structural_issues": [{"title": "Generic summary", "detail": "Rewrite it."}],
+        "polish_issues": [{"title": "Mixed punctuation", "detail": "Standardise."}],
+        "priority_table": [{"priority": 1, "action": "Add email", "impact": "Huge"}]
+    }''')]
+
+    with patch("services.ai_service.anthropic_client.messages.create", new_callable=AsyncMock, return_value=mock_response):
+        result = await generate_cv_review("I am a Python developer.", "Backend Engineer")
+
+    assert result["summary"] == "Solid foundation."
+    assert len(result["critical_issues"]) == 1
+    assert result["critical_issues"][0]["title"] == "No email"
+    assert result["priority_table"][0]["impact"] == "Huge"
+
+
+@pytest.mark.asyncio
+async def test_generate_cv_review_strips_markdown_fences():
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text='```json\n{"summary": "OK.", "critical_issues": [], "structural_issues": [], "polish_issues": [], "priority_table": []}\n```')]
+
+    with patch("services.ai_service.anthropic_client.messages.create", new_callable=AsyncMock, return_value=mock_response):
+        result = await generate_cv_review("CV text", "Full-Stack Developer")
+
+    assert result["summary"] == "OK."
