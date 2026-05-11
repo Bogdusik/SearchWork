@@ -80,7 +80,7 @@ class CVReviewItem(BaseModel):
 class PriorityItem(BaseModel):
     priority: int
     action: str
-    impact: str  # "Huge" | "High" | "Medium" | "Low"
+    impact: Literal["Huge", "High", "Medium", "Low"]
 
 class CVReviewResponse(BaseModel):
     summary: str
