@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import type { Application, ApplicationStatus } from '@/types'
 import { StatusTabs } from '@/components/applications/status-tabs'
 import { ApplicationRow } from '@/components/applications/application-row'
+import { StatsRow } from '@/components/dashboard/stats-row'
 
 type FilterValue = ApplicationStatus | 'all'
 
@@ -29,17 +30,27 @@ export default function ApplicationsPage() {
     return c
   }, [applications])
 
+  const stats = useMemo(() => ({
+    totalApplications: applications.filter(a => a.status !== 'saved').length,
+    responses: applications.filter(a => ['interview', 'offer', 'rejected'].includes(a.status)).length,
+    bestMatch: applications.length > 0 ? Math.max(0, ...applications.map(a => a.job.match_score ?? 0)) : 0,
+  }), [applications])
+
   const handleStatusChange = (id: number, newStatus: ApplicationStatus) => {
     setApplications(prev =>
       prev.map(app => app.id === id ? { ...app, status: newStatus } : app)
     )
   }
 
+  const handleDelete = (id: number) => {
+    setApplications(prev => prev.filter(app => app.id !== id))
+  }
+
   const filtered = filter === 'all' ? applications : applications.filter(a => a.status === filter)
 
   return (
     <div className="max-w-2xl">
-      <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Track Progress</p>
+      <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Overview</p>
       <h1 className="text-3xl font-bold bg-gradient-to-b from-white to-white/75 bg-clip-text text-transparent mb-8">
         My Applications
       </h1>
@@ -50,12 +61,17 @@ export default function ApplicationsPage() {
         </div>
       ) : (
         <>
+          <StatsRow
+            totalApplications={stats.totalApplications}
+            responses={stats.responses}
+            bestMatch={stats.bestMatch}
+          />
           <StatusTabs active={filter} counts={counts} onChange={setFilter} />
           <div className="space-y-3">
             {filtered.length === 0 ? (
               <p className="text-white/30 text-sm">No applications here yet.</p>
             ) : (
-              filtered.map((app) => <ApplicationRow key={app.id} application={app} onStatusChange={handleStatusChange} />)
+              filtered.map((app) => <ApplicationRow key={app.id} application={app} onStatusChange={handleStatusChange} onDelete={handleDelete} />)
             )}
           </div>
         </>
