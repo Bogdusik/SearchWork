@@ -4,9 +4,9 @@ from sqlalchemy import select, delete
 
 from database import get_db
 from models import CVProfile
-from schemas import CVProfileOut
+from schemas import CVProfileOut, CVReviewRequest, CVReviewResponse
 from services.cv_parser import extract_text_from_pdf
-from services.ai_service import extract_cv_skills
+from services.ai_service import extract_cv_skills, generate_cv_review
 
 router = APIRouter(prefix="/cv", tags=["cv"])
 
@@ -46,3 +46,20 @@ async def upload_cv(
     await db.commit()
     await db.refresh(profile)
     return profile
+
+
+@router.post("/review", response_model=CVReviewResponse)
+async def review_cv(
+    body: CVReviewRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate a structured CV review via Claude for the stored CV profile."""
+    result = await db.execute(
+        select(CVProfile).order_by(CVProfile.updated_at.desc()).limit(1)
+    )
+    profile = result.scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=404, detail="No CV uploaded yet.")
+
+    review = await generate_cv_review(profile.raw_text, body.target_role)
+    return review
