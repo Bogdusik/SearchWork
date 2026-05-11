@@ -79,9 +79,20 @@ export function CvReview({ profile, review, targetRole, onTargetRoleChange, onRe
   const [stepLabel, setStepLabel] = useState('')
   const [error, setError] = useState<string | null>(null)
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([])
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false)
+  const roleDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     return () => { timerRefs.current.forEach(clearTimeout) }
+  }, [])
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target as Node))
+        setShowRoleDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   if (!profile) {
@@ -91,6 +102,12 @@ export function CvReview({ profile, review, targetRole, onTargetRoleChange, onRe
       </div>
     )
   }
+
+  const filteredRoles = profile.job_titles
+    ? targetRole.length > 0
+      ? profile.job_titles.filter(r => r.toLowerCase().includes(targetRole.toLowerCase()))
+      : profile.job_titles
+    : []
 
   function startProgress() {
     setProgress(0)
@@ -130,13 +147,30 @@ export function CvReview({ profile, review, targetRole, onTargetRoleChange, onRe
           <label className="block text-xs text-white/30 uppercase tracking-widest">
             Target Role
           </label>
-          <input
-            type="text"
-            value={targetRole}
-            onChange={(e) => onTargetRoleChange(e.target.value)}
-            placeholder="e.g. Backend Engineer"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50"
-          />
+          <div ref={roleDropdownRef} className="relative">
+            <input
+              type="text"
+              value={targetRole}
+              onChange={(e) => { onTargetRoleChange(e.target.value); setShowRoleDropdown(true) }}
+              onFocus={() => setShowRoleDropdown(true)}
+              onKeyDown={(e) => { if (e.key === 'Escape') setShowRoleDropdown(false) }}
+              placeholder="e.g. Backend Engineer"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50"
+            />
+            {showRoleDropdown && filteredRoles.length > 0 && (
+              <ul className="absolute z-50 top-full left-0 right-0 mt-1 glass rounded-xl overflow-hidden border border-white/[0.08]">
+                {filteredRoles.map((role) => (
+                  <li
+                    key={role}
+                    onMouseDown={() => { onTargetRoleChange(role); setShowRoleDropdown(false) }}
+                    className="px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] cursor-pointer transition-colors"
+                  >
+                    {role}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button
             onClick={handleAnalyse}
             disabled={!targetRole.trim() || loading}
