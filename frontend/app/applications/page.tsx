@@ -61,11 +61,13 @@ export default function ApplicationsPage() {
         </div>
       ) : (
         <>
-          <StatsRow
-            totalApplications={stats.totalApplications}
-            responses={stats.responses}
-            bestMatch={stats.bestMatch}
-          />
+          {!error && (
+            <StatsRow
+              totalApplications={stats.totalApplications}
+              responses={stats.responses}
+              bestMatch={stats.bestMatch}
+            />
+          )}
           <StatusTabs active={filter} counts={counts} onChange={setFilter} />
           <div className="space-y-3">
             {filtered.length === 0 ? (
