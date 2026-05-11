@@ -78,10 +78,10 @@ export function CvReview({ profile, review, targetRole, onTargetRoleChange, onRe
   const [progress, setProgress] = useState(0)
   const [stepLabel, setStepLabel] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([])
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+    return () => { timerRefs.current.forEach(clearTimeout) }
   }, [])
 
   if (!profile) {
@@ -95,16 +95,14 @@ export function CvReview({ profile, review, targetRole, onTargetRoleChange, onRe
   function startProgress() {
     setProgress(0)
     setStepLabel(STEPS[0].label)
-    STEPS.forEach((step, i) => {
-      timerRef.current = setTimeout(() => {
-        setProgress(step.pct)
-        setStepLabel(step.label)
-      }, i * 3000)
-    })
+    timerRefs.current = STEPS.map((step, i) =>
+      setTimeout(() => { setProgress(step.pct); setStepLabel(step.label) }, i * 3000)
+    )
   }
 
   function finishProgress() {
-    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRefs.current.forEach(clearTimeout)
+    timerRefs.current = []
     setProgress(100)
   }
 
@@ -115,10 +113,8 @@ export function CvReview({ profile, review, targetRole, onTargetRoleChange, onRe
     try {
       const result = await api.cv.review(targetRole)
       finishProgress()
-      setTimeout(() => {
-        onReviewChange(result)
-        setLoading(false)
-      }, 400)
+      onReviewChange(result)
+      setLoading(false)
     } catch (e: unknown) {
       finishProgress()
       const msg = e instanceof Error ? e.message : 'Analysis failed. Please try again.'
