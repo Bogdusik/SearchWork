@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel
 
-STATUS = Literal["saved", "applied", "interview", "offer", "rejected"]
+STATUS = Literal["saved", "in_progress", "applied", "interview", "offer", "rejected"]
 
 class CVProfileOut(BaseModel):
     id: int
@@ -12,7 +12,21 @@ class CVProfileOut(BaseModel):
     updated_at: datetime
     model_config = {"from_attributes": True}
 
+class JobSearchResult(BaseModel):
+    """Returned by /jobs — live from internet, not persisted."""
+    external_id: str
+    source: str
+    title: str
+    company: str
+    location: str
+    salary_min: int | None
+    salary_max: int | None
+    url: str
+    description: str
+    match_score: int
+
 class JobOut(BaseModel):
+    """Returned inside ApplicationOut — saved to DB."""
     id: int
     external_id: str
     source: str
@@ -36,9 +50,41 @@ class ApplicationOut(BaseModel):
     updated_at: datetime
     model_config = {"from_attributes": True}
 
+class JobInput(BaseModel):
+    """Job data sent from frontend when creating an application."""
+    external_id: str
+    source: str
+    title: str
+    company: str
+    location: str
+    salary_min: int | None = None
+    salary_max: int | None = None
+    url: str
+    description: str
+    match_score: int
+
 class ApplicationCreate(BaseModel):
-    job_id: int
+    job: JobInput
     status: STATUS = "saved"
 
 class ApplicationUpdate(BaseModel):
     status: STATUS
+
+class CVReviewRequest(BaseModel):
+    target_role: str
+
+class CVReviewItem(BaseModel):
+    title: str
+    detail: str
+
+class PriorityItem(BaseModel):
+    priority: int
+    action: str
+    impact: str  # "Huge" | "High" | "Medium" | "Low"
+
+class CVReviewResponse(BaseModel):
+    summary: str
+    critical_issues: list[CVReviewItem]
+    structural_issues: list[CVReviewItem]
+    polish_issues: list[CVReviewItem]
+    priority_table: list[PriorityItem]
