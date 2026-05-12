@@ -1,19 +1,19 @@
-Проверь изменённые файлы в backend/ на SearchWork-специфичные проблемы:
+Check changed files in backend/ for SearchWork-specific issues:
 
 **Async / SQLAlchemy:**
-- Все relationship доступы используют `selectinload()` — без него `MissingGreenlet` в рантайме
-- `await db.execute(...)` везде где нужен результат из БД
-- Нет `db.query(...)` (синхронный стиль) в async роутерах
+- All relationship accesses use `selectinload()` — without it, `MissingGreenlet` at runtime
+- `await db.execute(...)` everywhere a DB result is needed
+- No `db.query(...)` (sync style) in async routers
 
 **datetime:**
-- Используется `datetime.now(timezone.utc).replace(tzinfo=None)`, не `datetime.utcnow()`
+- Uses `datetime.now(timezone.utc).replace(tzinfo=None)`, not `datetime.utcnow()`
 
 **Pydantic schemas:**
-- Все новые поля модели покрыты в соответствующей схеме в schemas.py
-- Response схемы не раскрывают лишних полей (например бинарный CV)
+- All new model fields are covered in the corresponding schema in schemas.py
+- Response schemas don't expose sensitive fields (e.g., binary CV)
 
 **Job sources:**
-- Новый сервис возвращает список словарей с ключами: `external_id`, `source`, `title`, `company`, `location`, `url`, `description`, `salary_min`, `salary_max`
-- Salary поля могут быть None — нет жёстких float() кастов
+- New service returns a list of dicts with keys: `external_id`, `source`, `title`, `company`, `location`, `url`, `description`, `salary_min`, `salary_max`
+- Salary fields can be None — no hard float() casts
 
-Если находишь проблему — покажи конкретную строку и предложи исправление.
+If you find an issue — show the specific line and suggest a fix.
