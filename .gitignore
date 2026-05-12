@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+*.err
+backend/uvicorn.log
+backend/uvicorn.err
+
+# Node
+node_modules/
+.next/
+frontend/.next/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code local config (machine-specific)
+.claude/settings.local.json
+.playwright-mcp/
+.superpowers/
+
+# Docs cache
+docs/superpowers/
