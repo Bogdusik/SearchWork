@@ -7,7 +7,7 @@ load_dotenv()
 
 from database import engine
 import models
-from routers import cv, jobs, applications
+from routers import cv, jobs, applications, debug
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(cv.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)
+app.include_router(debug.router)
 
 @app.get("/health")
 async def health():
