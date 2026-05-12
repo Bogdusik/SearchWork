@@ -11,11 +11,10 @@ def _auth_header() -> str:
     return f"Basic {token}"
 
 
-async def search_jobs(query: str, results_per_page: int = 20) -> list[dict]:
-    """Search UK jobs on Reed. Returns list of normalised job dicts."""
+async def search_jobs(query: str, location_name: str = "United Kingdom", results_per_page: int = 20) -> list[dict]:
     params = {
         "keywords": query,
-        "locationName": "United Kingdom",
+        "locationName": location_name,
         "resultsToTake": results_per_page,
     }
     async with httpx.AsyncClient(timeout=10) as client:
