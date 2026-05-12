@@ -1,22 +1,22 @@
-Помоги отладить проблему. Заполни теги перед отправкой:
+Help debug an issue. Fill in the tags before sending:
 
 <context>
-[Где происходит: роутер / сервис / frontend компонент / тест]
-[Стек: FastAPI + SQLAlchemy / Next.js / pytest]
+[Where it's happening: router / service / frontend component / test]
+[Stack: FastAPI + SQLAlchemy / Next.js / pytest]
 </context>
 
 <error>
-[Полный traceback или сообщение об ошибке]
+[Full traceback or error message]
 </error>
 
 <code>
-[Минимальный кусок кода где происходит ошибка]
+[Minimal code snippet where the error occurs]
 </code>
 
 <attempted>
-[Что уже пробовал]
+[What you've already tried]
 </attempted>
 
 <task>
-Найди причину и предложи исправление. Не переписывай весь файл — только проблемный участок.
+Find the root cause and suggest a fix. Don't rewrite the whole file — only the problematic section.
 </task>
