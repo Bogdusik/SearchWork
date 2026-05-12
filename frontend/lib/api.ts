@@ -30,6 +30,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ target_role: targetRole }),
       }),
+    generateCoverLetter: (externalId: string, source: string, jobTitle: string, company: string, description: string, forceRegenerate = false) =>
+      req<{ content: string }>('/cv/cover-letter', {
+        method: 'POST',
+        body: JSON.stringify({ external_id: externalId, source, job_title: jobTitle, company, description, force_regenerate: forceRegenerate }),
+      }).then(d => d.content),
   },
   jobs: {
     search: (q: string, locations: string[] = []) => {
