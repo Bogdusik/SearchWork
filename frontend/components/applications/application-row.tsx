@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import type { Application, ApplicationStatus } from '@/types'
 import { api } from '@/lib/api'
+import { CoverLetterModal } from '@/components/ui/cover-letter-modal'
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: 'saved', label: 'Saved' },
+  { value: 'in_progress', label: 'In Progress' },
   { value: 'applied', label: 'Applied' },
   { value: 'interview', label: 'Interview' },
   { value: 'offer', label: 'Offer' },
@@ -14,23 +16,39 @@ const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   saved: 'text-white/40',
+  in_progress: 'text-amber-400',
   applied: 'text-emerald-400',
   interview: 'text-indigo-400',
-  offer: 'text-amber-400',
+  offer: 'text-yellow-300',
   rejected: 'text-rose-400',
 }
 
 interface ApplicationRowProps {
   application: Application
   onStatusChange?: (id: number, newStatus: ApplicationStatus) => void
+  onDelete?: (id: number) => void
 }
 
-export function ApplicationRow({ application, onStatusChange }: ApplicationRowProps) {
+export function ApplicationRow({ application, onStatusChange, onDelete }: ApplicationRowProps) {
   const [status, setStatus] = useState<ApplicationStatus>(application.status as ApplicationStatus)
   const [updating, setUpdating] = useState(false)
+  const [showCoverLetter, setShowCoverLetter] = useState(false)
 
-  const handleChange = async (newStatus: ApplicationStatus) => {
+  const handleChange = async (value: string) => {
     if (updating) return
+
+    if (value === '__delete__') {
+      setUpdating(true)
+      try {
+        await api.applications.delete(application.id)
+        onDelete?.(application.id)
+      } finally {
+        setUpdating(false)
+      }
+      return
+    }
+
+    const newStatus = value as ApplicationStatus
     setUpdating(true)
     setStatus(newStatus)
     try {
@@ -47,33 +65,66 @@ export function ApplicationRow({ application, onStatusChange }: ApplicationRowPr
     ? `£${(application.job.salary_min / 1000).toFixed(0)}k–£${(application.job.salary_max / 1000).toFixed(0)}k`
     : null
 
+  const matched = application.job.matched_skills ?? []
+  const missing = application.job.missing_skills ?? []
+
   return (
-    <div className="glass p-4 flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <div className="text-sm font-medium text-white/85 truncate">{application.job.title}</div>
-        <div className="text-xs text-white/30 mt-0.5">
-          {application.job.company} · {application.job.location}
-          {salary ? ` · ${salary}` : ''}
-          {application.applied_at
-            ? ` · Applied ${new Date(application.applied_at).toLocaleDateString('en-GB')}`
-            : ''}
+    <>
+      <div className="glass p-4 flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-white/85 truncate">{application.job.title}</div>
+          <div className="text-xs text-white/30 mt-0.5">
+            {application.job.company} · {application.job.location}
+            {salary ? ` · ${salary}` : ''}
+            {application.applied_at
+              ? ` · Applied ${new Date(application.applied_at).toLocaleDateString('en-GB')}`
+              : ''}
+          </div>
+          {(matched.length > 0 || missing.length > 0) && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {matched.slice(0, 4).map(s => (
+                <span key={s} className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500/70">✓ {s}</span>
+              ))}
+              {missing.slice(0, 3).map(s => (
+                <span key={s} className="text-xs px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500/70">✗ {s}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs font-semibold text-indigo-300">{application.job.match_score}%</span>
+          <button
+            onClick={() => setShowCoverLetter(true)}
+            title="Generate Cover Letter"
+            className="px-2.5 py-1 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
+          >
+            CL
+          </button>
+          <select
+            value={status}
+            disabled={updating}
+            onChange={(e) => handleChange(e.target.value)}
+            className={`bg-transparent border border-current/40 rounded-lg px-2 py-1 text-xs outline-none cursor-pointer disabled:opacity-50 ${STATUS_COLORS[status]}`}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-[#030303] text-white">
+                {opt.label}
+              </option>
+            ))}
+            <option value="__delete__" className="bg-[#030303] text-rose-400">Delete</option>
+          </select>
         </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className="text-xs font-semibold text-indigo-300">{application.job.match_score}%</span>
-        <select
-          value={status}
-          disabled={updating}
-          onChange={(e) => handleChange(e.target.value as ApplicationStatus)}
-          className={`bg-transparent border border-current/40 rounded-lg px-2 py-1 text-xs outline-none cursor-pointer disabled:opacity-50 ${STATUS_COLORS[status]}`}
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} className="bg-[#030303] text-white">
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+
+      <CoverLetterModal
+        isOpen={showCoverLetter}
+        onClose={() => setShowCoverLetter(false)}
+        externalId={application.job.external_id}
+        source={application.job.source}
+        jobTitle={application.job.title}
+        company={application.job.company}
+        description={application.job.description}
+      />
+    </>
   )
 }
