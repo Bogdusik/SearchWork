@@ -30,30 +30,32 @@ async def test_extract_cv_skills_handles_markdown_json():
 
 
 @pytest.mark.asyncio
-async def test_score_job_match_returns_integer_0_to_100():
+async def test_score_job_match_returns_dict_with_score_and_skills():
     mock_response = MagicMock()
-    mock_response.content = [MagicMock(text="75")]
+    mock_response.content = [MagicMock(text='{"score": 75, "matched": ["Python", "React"], "missing": ["Docker"]}')]
 
     with patch("services.ai_service.anthropic_client.messages.create", new_callable=AsyncMock, return_value=mock_response):
-        score = await score_job_match(
+        result = await score_job_match(
             cv_skills=["Python", "React"],
             job_description="We need a Python backend developer with React knowledge"
         )
 
-    assert isinstance(score, int)
-    assert 0 <= score <= 100
+    assert isinstance(result, dict)
+    assert result["score"] == 75
+    assert "Python" in result["matched"]
+    assert "Docker" in result["missing"]
 
 
 @pytest.mark.asyncio
 async def test_score_job_match_clamps_out_of_range():
-    """Score must be clamped to 0-100 even if Claude returns something weird."""
+    """Score must be clamped to 0-100 even if Claude returns out-of-range value."""
     mock_response = MagicMock()
-    mock_response.content = [MagicMock(text="150")]
+    mock_response.content = [MagicMock(text='{"score": 150, "matched": [], "missing": []}')]
 
     with patch("services.ai_service.anthropic_client.messages.create", new_callable=AsyncMock, return_value=mock_response):
-        score = await score_job_match(cv_skills=["Python"], job_description="Python role")
+        result = await score_job_match(cv_skills=["Python"], job_description="Python role")
 
-    assert score == 100
+    assert result["score"] == 100
 
 
 @pytest.mark.asyncio

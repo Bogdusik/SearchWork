@@ -1,12 +1,13 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
 from database import get_db
-from models import CVProfile
-from schemas import CVProfileOut, CVReviewRequest, CVReviewResponse
+from models import CVProfile, CoverLetter
+from schemas import CVProfileOut, CVReviewRequest, CVReviewResponse, CoverLetterRequest
 from services.cv_parser import extract_text_from_pdf
-from services.ai_service import extract_cv_skills, generate_cv_review
+from services.ai_service import extract_cv_skills, generate_cv_review, generate_cover_letter
 
 router = APIRouter(prefix="/cv", tags=["cv"])
 
@@ -61,5 +62,54 @@ async def review_cv(
     if profile is None:
         raise HTTPException(status_code=404, detail="No CV uploaded yet.")
 
-    review = await generate_cv_review(profile.raw_text, body.target_role)
-    return review
+    try:
+        review = await generate_cv_review(profile.raw_text, body.target_role)
+        return review
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/cover-letter")
+async def generate_cover_letter_endpoint(
+    body: CoverLetterRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return cached cover letter if available, otherwise generate and cache it."""
+    cached_result = await db.execute(
+        select(CoverLetter).where(
+            CoverLetter.external_id == body.external_id,
+            CoverLetter.source == body.source,
+        )
+    )
+    cached = cached_result.scalar_one_or_none()
+
+    if cached and not body.force_regenerate:
+        return {"content": cached.content}
+
+    profile_result = await db.execute(
+        select(CVProfile).order_by(CVProfile.updated_at.desc()).limit(1)
+    )
+    profile = profile_result.scalar_one_or_none()
+    if profile is None:
+        raise HTTPException(status_code=400, detail="Upload a CV first.")
+
+    try:
+        letter = await generate_cover_letter(
+            profile.raw_text, body.job_title, body.company, body.description
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if cached:
+        cached.content = letter
+        cached.created_at = datetime.now()
+    else:
+        db.add(CoverLetter(
+            external_id=body.external_id,
+            source=body.source,
+            job_title=body.job_title,
+            company=body.company,
+            content=letter,
+        ))
+    await db.commit()
+    return {"content": letter}

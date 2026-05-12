@@ -24,6 +24,8 @@ class JobSearchResult(BaseModel):
     url: str
     description: str
     match_score: int
+    matched_skills: list[str] = []
+    missing_skills: list[str] = []
 
 class JobOut(BaseModel):
     """Returned inside ApplicationOut — saved to DB."""
@@ -38,6 +40,8 @@ class JobOut(BaseModel):
     url: str
     description: str
     match_score: int
+    matched_skills: list[str] = []
+    missing_skills: list[str] = []
     created_at: datetime
     model_config = {"from_attributes": True}
 
@@ -62,6 +66,8 @@ class JobInput(BaseModel):
     url: str
     description: str
     match_score: int
+    matched_skills: list[str] = []
+    missing_skills: list[str] = []
 
 class ApplicationCreate(BaseModel):
     job: JobInput
@@ -69,6 +75,14 @@ class ApplicationCreate(BaseModel):
 
 class ApplicationUpdate(BaseModel):
     status: STATUS
+
+class CoverLetterRequest(BaseModel):
+    external_id: str
+    source: str
+    job_title: str
+    company: str
+    description: str
+    force_regenerate: bool = False
 
 class CVReviewRequest(BaseModel):
     target_role: str
