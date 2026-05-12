@@ -1,33 +1,67 @@
 'use client'
 
-import type { Job } from '@/types'
+import type { JobSearchResult } from '@/types'
 import { api } from '@/lib/api'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface JobCardProps {
-  job: Job
+  job: JobSearchResult
+  initialStatus?: string
+  onCoverLetter?: () => void
 }
+
+type CardStatus = 'idle' | 'saved' | 'in_progress' | 'applied' | 'interview' | 'offer' | 'rejected'
 
 const matchColor = (score: number) =>
   score >= 80 ? 'bg-emerald-500/15 text-emerald-400' :
   score >= 60 ? 'bg-indigo-500/15 text-indigo-400' :
   'bg-white/5 text-white/40'
 
-export function JobCard({ job }: JobCardProps) {
-  const [status, setStatus] = useState<'idle' | 'saved' | 'applied'>('idle')
+const STATUS_LABEL: Record<string, string> = {
+  saved: 'Saved',
+  in_progress: '⏳ In Progress',
+  applied: '✅ Applied',
+  interview: '🎯 Interview',
+  offer: '🎉 Offer',
+  rejected: 'Rejected',
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  saved: 'text-white/40',
+  in_progress: 'text-amber-400',
+  applied: 'text-emerald-400',
+  interview: 'text-indigo-400',
+  offer: 'text-yellow-300',
+  rejected: 'text-rose-400',
+}
+
+export function JobCard({ job, initialStatus, onCoverLetter }: JobCardProps) {
+  const [status, setStatus] = useState<CardStatus>(
+    (initialStatus as CardStatus) ?? 'idle'
+  )
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [showWhy, setShowWhy] = useState(false)
+
+  useEffect(() => {
+    if (initialStatus) setStatus(initialStatus as CardStatus)
+  }, [initialStatus])
 
   const apply = async () => {
     if (actionLoading) return
     setActionLoading(true)
     setActionError(null)
     try {
-      await api.applications.create(job.id, 'applied')
-      setStatus('applied')
+      await api.applications.create(job, 'in_progress')
+      setStatus('in_progress')
       if (job.url) window.open(job.url, '_blank')
-    } catch {
-      setActionError('Could not save application. Please try again.')
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('409')) {
+        setStatus('in_progress')
+        if (job.url) window.open(job.url, '_blank')
+      } else {
+        setActionError('Could not save application. Please try again.')
+      }
     } finally {
       setActionLoading(false)
     }
@@ -38,7 +72,7 @@ export function JobCard({ job }: JobCardProps) {
     setActionLoading(true)
     setActionError(null)
     try {
-      await api.applications.create(job.id, 'saved')
+      await api.applications.create(job, 'saved')
       setStatus('saved')
     } catch {
       setActionError('Could not save job. Please try again.')
@@ -65,12 +99,46 @@ export function JobCard({ job }: JobCardProps) {
         </span>
       </div>
       <p className="text-xs text-white/30 line-clamp-2">{job.description}</p>
+
+      {(job.matched_skills?.length > 0 || job.missing_skills?.length > 0) && (
+        <div>
+          <button
+            onClick={() => setShowWhy(v => !v)}
+            className="text-xs text-white/30 hover:text-white/50 transition-colors"
+          >
+            {showWhy ? '▾ Hide reasoning' : '▸ Why this score?'}
+          </button>
+          {showWhy && (
+            <div className="mt-2 space-y-2">
+              {job.matched_skills?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {job.matched_skills.map(s => (
+                    <span key={s} className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                      ✓ {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {job.missing_skills?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {job.missing_skills.map(s => (
+                    <span key={s} className="text-xs px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/20">
+                      ✗ {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {actionError && <p className="text-rose-400 text-xs">{actionError}</p>}
-      <div className="flex gap-2 pt-1">
-        {status === 'applied' ? (
-          <span className="text-xs text-emerald-400">✅ Applied</span>
-        ) : status === 'saved' ? (
-          <span className="text-xs text-white/40">Saved</span>
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        {status !== 'idle' ? (
+          <span className={`text-xs px-4 py-1.5 ${STATUS_COLOR[status] ?? 'text-white/40'}`}>
+            {STATUS_LABEL[status] ?? status}
+          </span>
         ) : (
           <>
             <button
@@ -89,6 +157,12 @@ export function JobCard({ job }: JobCardProps) {
             </button>
           </>
         )}
+        <button
+          onClick={onCoverLetter}
+          className="px-4 py-1.5 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
+        >
+          Cover Letter
+        </button>
       </div>
     </div>
   )
