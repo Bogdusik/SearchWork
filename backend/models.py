@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 import json
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy import TypeDecorator
@@ -34,7 +37,7 @@ class CVProfile(Base):
     skills: Mapped[list[str]] = mapped_column(JSONList)
     job_titles: Mapped[list[str]] = mapped_column(JSONList)
     keywords: Mapped[list[str]] = mapped_column(JSONList)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
@@ -49,10 +52,22 @@ class SavedJob(Base):
     url: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(Text)
     match_score: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    matched_skills: Mapped[list[str]] = mapped_column(JSONList, nullable=True, default=None)
+    missing_skills: Mapped[list[str]] = mapped_column(JSONList, nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
     application: Mapped["Application | None"] = relationship(
         "Application", back_populates="job", uselist=False, cascade="all, delete-orphan"
     )
+
+class CoverLetter(Base):
+    __tablename__ = "cover_letters"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    external_id: Mapped[str] = mapped_column(String)
+    source: Mapped[str] = mapped_column(String)
+    job_title: Mapped[str] = mapped_column(String)
+    company: Mapped[str] = mapped_column(String)
+    content: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
 class Application(Base):
     __tablename__ = "applications"
@@ -61,5 +76,5 @@ class Application(Base):
     status: Mapped[str] = mapped_column(String, default="saved")
     applied_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
     job: Mapped["SavedJob"] = relationship("SavedJob", back_populates="application")

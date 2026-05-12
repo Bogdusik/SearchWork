@@ -9,7 +9,7 @@ export interface CVProfile {
 /** Live search result from internet — not saved to DB. */
 export interface JobSearchResult {
   external_id: string
-  source: 'adzuna' | 'reed' | 'indeed' | 'gradcracker' | 'jsearch' | 'arbeitnow' | 'remotive' | 'totaljobs'
+  source: 'adzuna' | 'reed' | 'indeed' | 'gradcracker' | 'jsearch' | 'arbeitnow' | 'remotive' | 'totaljobs' | 'prospects' | 'weworkremotely' | 'jobicy' | 'cwjobs'
   title: string
   company: string
   location: string
@@ -18,6 +18,8 @@ export interface JobSearchResult {
   url: string
   description: string
   match_score: number
+  matched_skills: string[]
+  missing_skills: string[]
 }
 
 /** Job saved to DB — exists inside Application. */
