@@ -33,9 +33,15 @@ Thumbs.db
 .idea/
 
 # Claude Code local config (machine-specific)
+.claude/settings.json
 .claude/settings.local.json
 .playwright-mcp/
 .superpowers/
+
+# Test artifacts
+backend/test.db
+.pytest_cache/
+backend/.pytest_cache/
 
 # Docs cache
 docs/superpowers/
