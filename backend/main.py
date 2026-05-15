@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from dotenv import load_dotenv
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -27,17 +28,26 @@ from routers import cv, jobs, applications, debug, auth_router
 
 limiter = Limiter(key_func=get_remote_address)
 
+_TABLES_NEEDING_USER_ID = ("cv_profiles", "saved_jobs", "cover_letters", "applications")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
+        # Create new tables (users, refresh_tokens, etc.); skips tables that already exist
         await conn.run_sync(models.Base.metadata.create_all)
+        # Add user_id FK to pre-auth tables that already exist on the DB
+        for table in _TABLES_NEEDING_USER_ID:
+            await conn.execute(text(
+                f"ALTER TABLE IF EXISTS {table} "
+                f"ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE"
+            ))
     yield
 
 app = FastAPI(title="SearchWork API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")]
 
 app.add_middleware(
     CORSMiddleware,
