@@ -23,7 +23,7 @@ export function StatusTabs({ active, counts, onChange }: StatusTabsProps) {
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
-          className={`px-4 py-1.5 rounded-full text-xs border transition-colors ${
+          className={`min-h-[44px] px-4 py-2 rounded-full text-xs border transition-colors flex items-center ${
             active === tab.value
               ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300'
               : 'bg-transparent border-white/10 text-white/35 hover:text-white/60'

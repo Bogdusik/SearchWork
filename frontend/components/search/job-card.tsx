@@ -144,14 +144,14 @@ export function JobCard({ job, initialStatus, onCoverLetter }: JobCardProps) {
             <button
               onClick={apply}
               disabled={actionLoading}
-              className="px-4 py-1.5 rounded-lg text-xs bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 transition-colors"
+              className="min-h-[44px] px-4 py-2 rounded-lg text-xs bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 transition-colors"
             >
               {actionLoading ? '...' : 'Apply Now'}
             </button>
             <button
               onClick={save}
               disabled={actionLoading}
-              className="px-4 py-1.5 rounded-lg text-xs bg-white/5 border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-40 transition-colors"
+              className="min-h-[44px] px-4 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white/40 hover:text-white/60 disabled:opacity-40 transition-colors"
             >
               Save
             </button>
@@ -159,7 +159,7 @@ export function JobCard({ job, initialStatus, onCoverLetter }: JobCardProps) {
         )}
         <button
           onClick={onCoverLetter}
-          className="px-4 py-1.5 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
+          className="min-h-[44px] px-4 py-2 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
         >
           Cover Letter
         </button>

@@ -11,11 +11,11 @@ export function StatsRow({ totalApplications, responses, bestMatch }: StatsRowPr
     { label: 'Best Match', value: `${bestMatch}%`, color: 'text-rose-300' },
   ]
   return (
-    <div className="grid grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
       {stats.map((s) => (
-        <div key={s.label} className="glass p-4 text-center">
-          <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-          <div className="text-xs text-white/30 mt-1 uppercase tracking-widest">{s.label}</div>
+        <div key={s.label} className="glass p-3 sm:p-4 text-center">
+          <div className={`text-2xl sm:text-3xl font-bold ${s.color}`}>{s.value}</div>
+          <div className="text-[10px] sm:text-xs text-white/30 mt-1 uppercase tracking-wide sm:tracking-widest">{s.label}</div>
         </div>
       ))}
     </div>

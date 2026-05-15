@@ -100,7 +100,7 @@ export function SearchBar({
             onChange={(e) => { setQuery(e.target.value); setShowJobDropdown(true) }}
             onFocus={() => setShowJobDropdown(true)}
             placeholder="Search jobs... e.g. junior developer"
-            className="w-full glass px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-500/50 rounded-xl"
+            className="w-full glass min-h-[44px] px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-500/50 rounded-xl"
           />
           {showJobDropdown && filteredJobs.length > 0 && (
             <ul className="absolute z-50 top-full left-0 right-0 mt-1 glass rounded-xl overflow-hidden border border-white/[0.08]">
@@ -119,7 +119,7 @@ export function SearchBar({
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="px-5 py-3 rounded-xl text-sm font-medium bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 transition-colors"
+          className="min-h-[44px] px-5 py-3 rounded-xl text-sm font-medium bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 transition-colors"
         >
           {loading ? 'Searching...' : 'Search'}
         </button>
@@ -127,7 +127,7 @@ export function SearchBar({
 
       {/* Location row */}
       <div ref={cityContainerRef} className="relative">
-        <div className="glass rounded-xl px-3 py-2 flex flex-wrap items-center gap-2 min-h-[42px]">
+        <div className="glass rounded-xl px-3 py-2 flex flex-wrap items-center gap-2 min-h-[44px]">
           <span className="text-xs text-white/25 shrink-0">📍</span>
           {locations.map(city => (
             <span
