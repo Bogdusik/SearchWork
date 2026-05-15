@@ -6,6 +6,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_REQUIRED_ENV_VARS = [
+    "DATABASE_URL",
+    "ANTHROPIC_API_KEY",
+    "ADZUNA_APP_ID",
+    "ADZUNA_APP_KEY",
+    "REED_API_KEY",
+]
+_missing = [v for v in _REQUIRED_ENV_VARS if not os.getenv(v)]
+if _missing:
+    raise RuntimeError(f"Missing required environment variables: {_missing}")
+
 from database import engine
 import models
 from routers import cv, jobs, applications, debug
@@ -31,7 +42,9 @@ app.add_middleware(
 app.include_router(cv.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)
-app.include_router(debug.router)
+
+if os.getenv("ENV") == "development":
+    app.include_router(debug.router)
 
 @app.get("/")
 async def root():

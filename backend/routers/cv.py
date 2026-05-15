@@ -1,5 +1,8 @@
+import logging
 from datetime import datetime
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
@@ -66,7 +69,8 @@ async def review_cv(
         review = await generate_cv_review(profile.raw_text, body.target_role)
         return review
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CV review failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="CV review failed. Please try again.")
 
 
 @router.post("/cover-letter")
@@ -98,7 +102,8 @@ async def generate_cover_letter_endpoint(
             profile.raw_text, body.job_title, body.company, body.description
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Cover letter generation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Cover letter generation failed. Please try again.")
 
     if cached:
         cached.content = letter
