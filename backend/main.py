@@ -1,8 +1,11 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 load_dotenv()
 
@@ -22,6 +25,8 @@ from database import engine
 import models
 from routers import cv, jobs, applications, debug, auth_router
 
+limiter = Limiter(key_func=get_remote_address)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -29,6 +34,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="SearchWork API", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 _origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 

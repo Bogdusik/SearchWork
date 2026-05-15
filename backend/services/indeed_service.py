@@ -1,6 +1,6 @@
 import re
 import httpx
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 INDEED_NS = "https://www.indeed.com/about/"
 BASE_URL = "https://www.indeed.com/rss"
