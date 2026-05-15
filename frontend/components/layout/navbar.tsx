@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
 import { useScroll } from '@/components/ui/use-scroll';
+import { useAuth } from '@/lib/auth-context';
 
 const links = [
   { href: '/cv', label: 'My CV' },
@@ -17,6 +18,7 @@ export function Navbar() {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
   const pathname = usePathname();
+  const { isAuthenticated, logout } = useAuth();
 
   React.useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -58,6 +60,21 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {isAuthenticated ? (
+              <button
+                onClick={logout}
+                className="px-3 py-1.5 rounded-lg text-sm text-white/40 hover:text-rose-400 hover:bg-rose-500/10 transition-colors duration-150"
+              >
+                Sign out
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="px-3 py-1.5 rounded-lg text-sm text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors duration-150"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -90,6 +107,22 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {isAuthenticated ? (
+              <button
+                onClick={() => { setOpen(false); logout(); }}
+                className="px-4 py-3 rounded-xl text-sm text-left text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              >
+                Sign out
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="px-4 py-3 rounded-xl text-sm text-indigo-400/70 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       )}
