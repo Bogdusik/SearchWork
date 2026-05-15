@@ -3,8 +3,10 @@ import re
 from fastapi import APIRouter, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+
+from auth import get_current_user
 from database import get_db
-from models import CVProfile
+from models import CVProfile, User
 from schemas import JobSearchResult
 from services import adzuna_service, reed_service, jsearch_service, remotive_service, weworkremotely_service, jobicy_service, arbeitnow_service, gradcracker_service, totaljobs_service, cwjobs_service, prospects_service, indeed_service
 from services.ai_service import score_job_match
@@ -65,8 +67,13 @@ def _is_junior_level(job: dict) -> bool:
     return not _SENIOR_TITLE.search(job.get("title", ""))
 
 
-async def get_cv_profile(db: AsyncSession) -> list[str]:
-    result = await db.execute(select(CVProfile).order_by(CVProfile.id.desc()).limit(1))
+async def get_cv_profile(db: AsyncSession, user_id: int) -> list[str]:
+    result = await db.execute(
+        select(CVProfile)
+        .where(CVProfile.user_id == user_id)
+        .order_by(CVProfile.id.desc())
+        .limit(1)
+    )
     profile = result.scalar_one_or_none()
     if not profile:
         return []
@@ -100,9 +107,10 @@ async def _fetch_for_location(query: str, where: str) -> list[dict]:
 async def search_jobs(
     q: str = Query(..., min_length=1),
     locations: list[str] = Query(default=[]),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    cv_skills = await get_cv_profile(db)
+    cv_skills = await get_cv_profile(db, current_user.id)
 
     search_locations = locations if locations else DEFAULT_LOCATIONS
     location_results = await asyncio.gather(

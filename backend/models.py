@@ -2,20 +2,16 @@ from datetime import datetime, timezone
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
 import json
-from sqlalchemy import Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy import TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
 
 class JSONList(TypeDecorator):
-    """Stores a list of strings as a JSON-encoded TEXT column.
-
-    Works transparently on both SQLite (tests) and PostgreSQL (production).
-    Using JSON-encoded text avoids the PostgreSQL-only ARRAY type, which
-    aiosqlite cannot handle during test table creation.
-    """
+    """Stores a list of strings as JSON-encoded TEXT. Works on SQLite and PostgreSQL."""
     impl = Text
     cache_ok = True
 
@@ -30,18 +26,39 @@ class JSONList(TypeDecorator):
         return json.loads(value)
 
 
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str | None] = mapped_column(String, nullable=True)
+    google_id: Mapped[str | None] = mapped_column(String, nullable=True, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String, unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+
 class CVProfile(Base):
     __tablename__ = "cv_profiles"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     raw_text: Mapped[str] = mapped_column(Text)
     skills: Mapped[list[str]] = mapped_column(JSONList)
     job_titles: Mapped[list[str]] = mapped_column(JSONList)
     keywords: Mapped[list[str]] = mapped_column(JSONList)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
+
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     external_id: Mapped[str] = mapped_column(String)
     source: Mapped[str] = mapped_column(String)
     title: Mapped[str] = mapped_column(String)
@@ -59,9 +76,11 @@ class SavedJob(Base):
         "Application", back_populates="job", uselist=False, cascade="all, delete-orphan"
     )
 
+
 class CoverLetter(Base):
     __tablename__ = "cover_letters"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     external_id: Mapped[str] = mapped_column(String)
     source: Mapped[str] = mapped_column(String)
     job_title: Mapped[str] = mapped_column(String)
@@ -69,9 +88,11 @@ class CoverLetter(Base):
     content: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
+
 class Application(Base):
     __tablename__ = "applications"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     job_id: Mapped[int] = mapped_column(Integer, ForeignKey("saved_jobs.id", ondelete="CASCADE"))
     status: Mapped[str] = mapped_column(String, default="saved")
     applied_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
