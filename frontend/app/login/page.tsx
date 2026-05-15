@@ -40,8 +40,9 @@ export default function LoginPage() {
     try {
       const { url } = await api.auth.googleUrl();
       window.location.href = url;
-    } catch {
-      setError("Could not initiate Google sign-in");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not initiate Google sign-in";
+      setError(msg.replace(/^API error \d+: /, ""));
     }
   }
 
