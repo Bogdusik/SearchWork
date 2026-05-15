@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RobotBackground />
         <div className="relative z-10 flex flex-col min-h-screen">
           <Navbar />
-          <main className="flex-1 container mx-auto px-6 py-8 max-w-5xl">
+          <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 max-w-5xl">
             {children}
           </main>
         </div>

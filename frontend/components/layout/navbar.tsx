@@ -62,7 +62,7 @@ export function Navbar() {
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden p-2 rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-colors"
+          className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-colors"
           aria-label="Toggle menu"
         >
           <MenuToggleIcon open={open} className="size-5" duration={300} />

@@ -70,7 +70,7 @@ export function ApplicationRow({ application, onStatusChange, onDelete }: Applic
 
   return (
     <>
-      <div className="glass p-4 flex items-center justify-between gap-4">
+      <div className="glass p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-white/85 truncate">{application.job.title}</div>
           <div className="text-xs text-white/30 mt-0.5">
@@ -91,28 +91,30 @@ export function ApplicationRow({ application, onStatusChange, onDelete }: Applic
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:shrink-0">
           <span className="text-xs font-semibold text-indigo-300">{application.job.match_score}%</span>
-          <button
-            onClick={() => setShowCoverLetter(true)}
-            title="Generate Cover Letter"
-            className="px-2.5 py-1 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
-          >
-            CL
-          </button>
-          <select
-            value={status}
-            disabled={updating}
-            onChange={(e) => handleChange(e.target.value)}
-            className={`bg-transparent border border-current/40 rounded-lg px-2 py-1 text-xs outline-none cursor-pointer disabled:opacity-50 ${STATUS_COLORS[status]}`}
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-[#030303] text-white">
-                {opt.label}
-              </option>
-            ))}
-            <option value="__delete__" className="bg-[#030303] text-rose-400">Delete</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCoverLetter(true)}
+              title="Generate Cover Letter"
+              className="min-h-[44px] px-3 py-2 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
+            >
+              CL
+            </button>
+            <select
+              value={status}
+              disabled={updating}
+              onChange={(e) => handleChange(e.target.value)}
+              className={`min-h-[44px] bg-transparent border border-current/40 rounded-lg px-2 py-2 text-xs outline-none cursor-pointer disabled:opacity-50 ${STATUS_COLORS[status]}`}
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value} className="bg-[#030303] text-white">
+                  {opt.label}
+                </option>
+              ))}
+              <option value="__delete__" className="bg-[#030303] text-rose-400">Delete</option>
+            </select>
+          </div>
         </div>
       </div>
 

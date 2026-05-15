@@ -57,7 +57,7 @@ export function CoverLetterModal({ isOpen, onClose, externalId, source, jobTitle
       />
 
       <div
-        className={`fixed top-0 right-0 h-full w-[480px] max-w-[95vw] z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-full sm:w-[480px] z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex flex-col h-full backdrop-blur-xl bg-white/[0.04] border-l border-white/[0.08] shadow-2xl">
 
@@ -69,7 +69,7 @@ export function CoverLetterModal({ isOpen, onClose, externalId, source, jobTitle
             </div>
             <button
               onClick={onClose}
-              className="text-white/30 hover:text-white/60 transition-colors text-lg leading-none shrink-0 mt-1"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/30 hover:text-white/60 transition-colors text-lg shrink-0"
             >
               ✕
             </button>
