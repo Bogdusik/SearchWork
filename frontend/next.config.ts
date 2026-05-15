@@ -17,10 +17,10 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       // Next.js needs unsafe-inline for its runtime styles/scripts
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com",
       "style-src 'self' 'unsafe-inline'",
       // Spline 3D scene and its asset CDN
-      "connect-src 'self' https://prod.spline.design https://draft.spline.design",
+      "connect-src 'self' https://prod.spline.design https://draft.spline.design https://searchwork-production.up.railway.app https://unpkg.com",
       "frame-src 'none'",
       "frame-ancestors 'none'",
       "object-src 'none'",
