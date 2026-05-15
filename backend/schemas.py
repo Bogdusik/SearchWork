@@ -1,8 +1,33 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 STATUS = Literal["saved", "in_progress", "applied", "interview", "offer", "rejected"]
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserOut(BaseModel):
+    id: int
+    email: str
+    model_config = {"from_attributes": True}
 
 class CVProfileOut(BaseModel):
     id: int

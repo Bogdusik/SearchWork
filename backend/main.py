@@ -12,6 +12,7 @@ _REQUIRED_ENV_VARS = [
     "ADZUNA_APP_ID",
     "ADZUNA_APP_KEY",
     "REED_API_KEY",
+    "SECRET_KEY",
 ]
 _missing = [v for v in _REQUIRED_ENV_VARS if not os.getenv(v)]
 if _missing:
@@ -19,7 +20,7 @@ if _missing:
 
 from database import engine
 import models
-from routers import cv, jobs, applications, debug
+from routers import cv, jobs, applications, debug, auth_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,6 +40,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router.router)
 app.include_router(cv.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)

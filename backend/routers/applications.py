@@ -3,8 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+
+from auth import get_current_user
 from database import get_db
-from models import Application, SavedJob
+from models import Application, SavedJob, User
 from schemas import ApplicationOut, ApplicationCreate, ApplicationUpdate
 
 router = APIRouter()
@@ -15,37 +17,49 @@ def _utcnow() -> datetime:
 
 
 @router.get("/applications", response_model=list[ApplicationOut])
-async def list_applications(db: AsyncSession = Depends(get_db)):
+async def list_applications(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
         select(Application)
         .options(selectinload(Application.job))
+        .where(Application.user_id == current_user.id)
         .order_by(Application.updated_at.desc())
     )
     return result.scalars().all()
 
 
 @router.post("/applications", response_model=ApplicationOut)
-async def create_application(body: ApplicationCreate, db: AsyncSession = Depends(get_db)):
+async def create_application(
+    body: ApplicationCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     existing_job = await db.execute(
         select(SavedJob).where(
             SavedJob.external_id == body.job.external_id,
             SavedJob.source == body.job.source,
+            SavedJob.user_id == current_user.id,
         )
     )
     job = existing_job.scalar_one_or_none()
     if job is None:
-        job = SavedJob(**body.job.model_dump())
+        job = SavedJob(**body.job.model_dump(), user_id=current_user.id)
         db.add(job)
         await db.flush()
 
     existing_app = await db.execute(
-        select(Application).where(Application.job_id == job.id)
+        select(Application).where(
+            Application.job_id == job.id,
+            Application.user_id == current_user.id,
+        )
     )
     if existing_app.scalar_one_or_none():
         raise HTTPException(409, "Application for this job already exists")
 
     applied_at = _utcnow() if body.status == "applied" else None
-    app = Application(job_id=job.id, status=body.status, applied_at=applied_at)
+    app = Application(job_id=job.id, user_id=current_user.id, status=body.status, applied_at=applied_at)
     db.add(app)
     await db.commit()
     result = await db.execute(
@@ -55,9 +69,16 @@ async def create_application(body: ApplicationCreate, db: AsyncSession = Depends
 
 
 @router.patch("/applications/{app_id}", response_model=ApplicationOut)
-async def update_application(app_id: int, body: ApplicationUpdate, db: AsyncSession = Depends(get_db)):
+async def update_application(
+    app_id: int,
+    body: ApplicationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
-        select(Application).options(selectinload(Application.job)).where(Application.id == app_id)
+        select(Application)
+        .options(selectinload(Application.job))
+        .where(Application.id == app_id, Application.user_id == current_user.id)
     )
     app = result.scalar_one_or_none()
     if not app:
@@ -70,14 +91,26 @@ async def update_application(app_id: int, body: ApplicationUpdate, db: AsyncSess
         app.applied_at = None
     await db.commit()
     result = await db.execute(
-        select(Application).options(selectinload(Application.job)).where(Application.id == app_id)
+        select(Application)
+        .options(selectinload(Application.job))
+        .where(Application.id == app_id)
     )
     return result.scalar_one()
 
 
 @router.delete("/applications/{app_id}", status_code=204)
-async def delete_application(app_id: int, db: AsyncSession = Depends(get_db)):
-    app = await db.get(Application, app_id)
+async def delete_application(
+    app_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Application).where(
+            Application.id == app_id,
+            Application.user_id == current_user.id,
+        )
+    )
+    app = result.scalar_one_or_none()
     if not app:
         raise HTTPException(404, "Application not found")
     job = await db.get(SavedJob, app.job_id)

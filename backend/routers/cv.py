@@ -3,11 +3,13 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 
 logger = logging.getLogger(__name__)
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
+from auth import get_current_user
 from database import get_db
-from models import CVProfile, CoverLetter
+from models import CVProfile, CoverLetter, User
 from schemas import CVProfileOut, CVReviewRequest, CVReviewResponse, CoverLetterRequest
 from services.cv_parser import extract_text_from_pdf
 from services.ai_service import extract_cv_skills, generate_cv_review, generate_cover_letter
@@ -16,10 +18,15 @@ router = APIRouter(prefix="/cv", tags=["cv"])
 
 
 @router.get("", response_model=CVProfileOut | None)
-async def get_cv(db: AsyncSession = Depends(get_db)):
-    """Return the most recent CV profile, or null if none exists."""
+async def get_cv(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
-        select(CVProfile).order_by(CVProfile.updated_at.desc()).limit(1)
+        select(CVProfile)
+        .where(CVProfile.user_id == current_user.id)
+        .order_by(CVProfile.updated_at.desc())
+        .limit(1)
     )
     return result.scalar_one_or_none()
 
@@ -27,9 +34,9 @@ async def get_cv(db: AsyncSession = Depends(get_db)):
 @router.post("", response_model=CVProfileOut)
 async def upload_cv(
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a PDF CV, extract text and skills via AI, and replace any existing profile."""
     pdf_bytes = await file.read()
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
@@ -37,9 +44,9 @@ async def upload_cv(
     raw_text = extract_text_from_pdf(pdf_bytes)
     extracted = await extract_cv_skills(raw_text)
 
-    # Delete all existing profiles, then insert a fresh one
-    await db.execute(delete(CVProfile))
+    await db.execute(delete(CVProfile).where(CVProfile.user_id == current_user.id))
     profile = CVProfile(
+        user_id=current_user.id,
         raw_text=raw_text,
         skills=extracted.get("skills", []),
         job_titles=extracted.get("job_titles", []),
@@ -55,11 +62,14 @@ async def upload_cv(
 @router.post("/review", response_model=CVReviewResponse)
 async def review_cv(
     body: CVReviewRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Generate a structured CV review via Claude for the stored CV profile."""
     result = await db.execute(
-        select(CVProfile).order_by(CVProfile.updated_at.desc()).limit(1)
+        select(CVProfile)
+        .where(CVProfile.user_id == current_user.id)
+        .order_by(CVProfile.updated_at.desc())
+        .limit(1)
     )
     profile = result.scalar_one_or_none()
     if profile is None:
@@ -76,11 +86,12 @@ async def review_cv(
 @router.post("/cover-letter")
 async def generate_cover_letter_endpoint(
     body: CoverLetterRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return cached cover letter if available, otherwise generate and cache it."""
     cached_result = await db.execute(
         select(CoverLetter).where(
+            CoverLetter.user_id == current_user.id,
             CoverLetter.external_id == body.external_id,
             CoverLetter.source == body.source,
         )
@@ -91,7 +102,10 @@ async def generate_cover_letter_endpoint(
         return {"content": cached.content}
 
     profile_result = await db.execute(
-        select(CVProfile).order_by(CVProfile.updated_at.desc()).limit(1)
+        select(CVProfile)
+        .where(CVProfile.user_id == current_user.id)
+        .order_by(CVProfile.updated_at.desc())
+        .limit(1)
     )
     profile = profile_result.scalar_one_or_none()
     if profile is None:
@@ -110,6 +124,7 @@ async def generate_cover_letter_endpoint(
         cached.created_at = datetime.now()
     else:
         db.add(CoverLetter(
+            user_id=current_user.id,
             external_id=body.external_id,
             source=body.source,
             job_title=body.job_title,

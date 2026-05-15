@@ -3,7 +3,9 @@ from models import SavedJob, Application
 
 
 async def create_test_job(db):
+    from tests.conftest import TEST_USER_ID
     job = SavedJob(
+        user_id=TEST_USER_ID,
         external_id="test-1", source="adzuna", title="Test Job", company="Corp",
         location="London", url="https://example.com", description="Test", match_score=80
     )
