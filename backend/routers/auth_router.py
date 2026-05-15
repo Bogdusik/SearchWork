@@ -4,8 +4,10 @@ from typing import Annotated
 
 import httpx
 import jwt
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
@@ -25,6 +27,7 @@ from models import RefreshToken, User
 from schemas import LoginRequest, RegisterRequest, TokenOut, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 _SECURE_COOKIE = os.getenv("ENV") != "development"
 _GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -51,7 +54,8 @@ async def _store_refresh_token(db: AsyncSession, user_id: int, token: str) -> No
 
 
 @router.post("/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("20/minute")
+async def register(request: Request, body: RegisterRequest, response: Response, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
@@ -68,7 +72,8 @@ async def register(body: RegisterRequest, response: Response, db: AsyncSession =
 
 
 @router.post("/login", response_model=TokenOut)
-async def login(body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+@limiter.limit("20/minute")
+async def login(request: Request, body: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if not user or not user.hashed_password or not verify_password(body.password, user.hashed_password):

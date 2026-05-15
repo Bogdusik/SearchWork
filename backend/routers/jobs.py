@@ -1,6 +1,8 @@
 import asyncio
 import re
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -8,6 +10,8 @@ from auth import get_current_user
 from database import get_db
 from models import CVProfile, User
 from schemas import JobSearchResult
+
+limiter = Limiter(key_func=get_remote_address)
 from services import adzuna_service, reed_service, jsearch_service, remotive_service, weworkremotely_service, jobicy_service, arbeitnow_service, gradcracker_service, totaljobs_service, cwjobs_service, prospects_service, indeed_service
 from services.ai_service import score_job_match
 
@@ -104,7 +108,9 @@ async def _fetch_for_location(query: str, where: str) -> list[dict]:
 
 
 @router.get("/jobs", response_model=list[JobSearchResult])
+@limiter.limit("10/minute")
 async def search_jobs(
+    request: Request,
     q: str = Query(..., min_length=1),
     locations: list[str] = Query(default=[]),
     current_user: User = Depends(get_current_user),

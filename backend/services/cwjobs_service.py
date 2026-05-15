@@ -1,6 +1,6 @@
 import re
 import httpx
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 RSS_URLS = [
     "https://www.cwjobs.co.uk/jobs/it/rss",
