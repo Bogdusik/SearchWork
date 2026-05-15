@@ -29,6 +29,7 @@ const securityHeaders = [
       // Spline loads workers and WASM blobs
       "worker-src 'self' blob:",
       "img-src 'self' data: blob: https:",
+      "media-src 'self' data:",
     ].join("; "),
   },
 ];
