@@ -79,6 +79,7 @@ export function ApplicationRow({ application, onStatusChange, onDelete }: Applic
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCoverLetter(true)}
+              aria-label="Generate cover letter"
               title="Generate Cover Letter"
               className="min-h-[44px] px-3 py-2 rounded-lg text-xs bg-violet-500/15 border border-violet-500/30 text-violet-300 hover:bg-violet-500/25 transition-colors"
             >

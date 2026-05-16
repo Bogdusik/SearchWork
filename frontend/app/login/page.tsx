@@ -62,10 +62,12 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm rounded-2xl p-8">
           {/* Tabs */}
-          <div className="flex gap-1 mb-6 bg-white/[0.04] rounded-lg p-1">
+          <div role="tablist" className="flex gap-1 mb-6 bg-white/[0.04] rounded-lg p-1">
             {(["login", "register"] as Tab[]).map((t) => (
               <button
                 key={t}
+                role="tab"
+                aria-selected={tab === t}
                 onClick={() => { setTab(t); setError(null); }}
                 className={`flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                   tab === t
@@ -89,6 +91,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                aria-describedby={error ? "form-error" : undefined}
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-indigo-500/60 focus:bg-white/[0.06] transition-all"
               />
             </div>
@@ -104,12 +107,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={tab === "register" ? "Min. 8 characters" : "••••••••"}
+                aria-describedby={error ? "form-error" : undefined}
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-indigo-500/60 focus:bg-white/[0.06] transition-all"
               />
             </div>
 
             {error && (
-              <p className="text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+              <p id="form-error" role="alert" className="text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
                 {error}
               </p>
             )}

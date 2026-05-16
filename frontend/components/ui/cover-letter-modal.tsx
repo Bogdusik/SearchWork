@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 
 interface CoverLetterPanelProps {
@@ -19,6 +19,20 @@ export function CoverLetterModal({ isOpen, onClose, externalId, source, jobTitle
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const loadedFor = useRef<string | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (isOpen) closeButtonRef.current?.focus()
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   const load = async (forceRegenerate = false) => {
     setLoading(true)
@@ -69,7 +83,9 @@ export function CoverLetterModal({ isOpen, onClose, externalId, source, jobTitle
               <p className="text-xs text-white/40 mt-0.5">{company}</p>
             </div>
             <button
+              ref={closeButtonRef}
               onClick={onClose}
+              aria-label="Close"
               className="min-h-[44px] min-w-[44px] flex items-center justify-center text-white/30 hover:text-white/60 transition-colors text-lg shrink-0"
             >
               ✕
