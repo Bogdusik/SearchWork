@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, KeyboardEvent, useId } from 'react'
 
 const UK_CITIES = [
   'Glasgow', 'Edinburgh', 'Newcastle upon Tyne', 'Leeds', 'Manchester', 'Liverpool',
@@ -23,11 +23,16 @@ export function SearchBar({
   initialQuery = '',
   initialLocations = [],
 }: SearchBarProps) {
+  const listboxId = useId()
+  const cityListboxId = useId()
+
   const [query, setQuery] = useState(initialQuery)
   const [showJobDropdown, setShowJobDropdown] = useState(false)
+  const [selectedJobIndex, setSelectedJobIndex] = useState(-1)
   const [locations, setLocations] = useState<string[]>(initialLocations)
   const [locationInput, setLocationInput] = useState('')
   const [showCityDropdown, setShowCityDropdown] = useState(false)
+  const [selectedCityIndex, setSelectedCityIndex] = useState(-1)
 
   const queryContainerRef = useRef<HTMLDivElement>(null)
   const cityContainerRef = useRef<HTMLDivElement>(null)
@@ -42,6 +47,8 @@ export function SearchBar({
       c.toLowerCase().includes(locationInput.toLowerCase()),
   )
 
+  const visibleCities = filteredCities.slice(0, 8)
+
   const addLocation = (city: string) => {
     const trimmed = city.trim()
     if (trimmed && !locations.includes(trimmed)) {
@@ -49,6 +56,7 @@ export function SearchBar({
     }
     setLocationInput('')
     setShowCityDropdown(false)
+    setSelectedCityIndex(-1)
   }
 
   const removeLocation = (city: string) => {
@@ -56,9 +64,30 @@ export function SearchBar({
   }
 
   const handleLocationKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' && showCityDropdown && visibleCities.length > 0) {
+      e.preventDefault()
+      setSelectedCityIndex(prev => Math.min(prev + 1, visibleCities.length - 1))
+      return
+    }
+    if (e.key === 'ArrowUp' && showCityDropdown) {
+      e.preventDefault()
+      setSelectedCityIndex(prev => Math.max(prev - 1, -1))
+      return
+    }
+    if (e.key === 'Enter' && selectedCityIndex >= 0 && visibleCities[selectedCityIndex]) {
+      e.preventDefault()
+      addLocation(visibleCities[selectedCityIndex])
+      return
+    }
+    if (e.key === 'Escape') {
+      setShowCityDropdown(false)
+      setSelectedCityIndex(-1)
+      return
+    }
     if ((e.key === 'Enter' || e.key === ',') && locationInput.trim()) {
       e.preventDefault()
       addLocation(locationInput)
+      return
     }
     if (e.key === 'Backspace' && !locationInput && locations.length > 0) {
       setLocations(prev => prev.slice(0, -1))
@@ -76,6 +105,29 @@ export function SearchBar({
   const selectJobSuggestion = (s: string) => {
     setQuery(s)
     setShowJobDropdown(false)
+    setSelectedJobIndex(-1)
+  }
+
+  const handleJobKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' && showJobDropdown && filteredJobs.length > 0) {
+      e.preventDefault()
+      setSelectedJobIndex(prev => Math.min(prev + 1, filteredJobs.length - 1))
+      return
+    }
+    if (e.key === 'ArrowUp' && showJobDropdown) {
+      e.preventDefault()
+      setSelectedJobIndex(prev => Math.max(prev - 1, -1))
+      return
+    }
+    if (e.key === 'Enter' && selectedJobIndex >= 0 && filteredJobs[selectedJobIndex]) {
+      e.preventDefault()
+      selectJobSuggestion(filteredJobs[selectedJobIndex])
+      return
+    }
+    if (e.key === 'Escape') {
+      setShowJobDropdown(false)
+      setSelectedJobIndex(-1)
+    }
   }
 
   useEffect(() => {
@@ -96,19 +148,32 @@ export function SearchBar({
         <div ref={queryContainerRef} className="relative flex-1">
           <input
             type="text"
+            role="combobox"
+            aria-expanded={showJobDropdown && filteredJobs.length > 0}
+            aria-controls={listboxId}
+            aria-activedescendant={selectedJobIndex >= 0 ? `job-opt-${selectedJobIndex}` : undefined}
+            aria-autocomplete="list"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setShowJobDropdown(true) }}
+            onChange={(e) => { setQuery(e.target.value); setShowJobDropdown(true); setSelectedJobIndex(-1) }}
             onFocus={() => setShowJobDropdown(true)}
+            onKeyDown={handleJobKeyDown}
             placeholder="Search jobs... e.g. junior developer"
             className="w-full glass min-h-[44px] px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-500/50 rounded-xl"
           />
           {showJobDropdown && filteredJobs.length > 0 && (
-            <ul className="absolute z-50 top-full left-0 right-0 mt-1 glass rounded-xl overflow-hidden border border-white/[0.08]">
-              {filteredJobs.map((s) => (
+            <ul id={listboxId} role="listbox" className="absolute z-50 top-full left-0 right-0 mt-1 glass rounded-xl overflow-hidden border border-white/[0.08]">
+              {filteredJobs.map((s, i) => (
                 <li
                   key={s}
+                  id={`job-opt-${i}`}
+                  role="option"
+                  aria-selected={i === selectedJobIndex}
                   onMouseDown={() => selectJobSuggestion(s)}
-                  className="px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] cursor-pointer transition-colors"
+                  className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                    i === selectedJobIndex
+                      ? 'bg-white/[0.1] text-white'
+                      : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
+                  }`}
                 >
                   {s}
                 </li>
@@ -146,21 +211,34 @@ export function SearchBar({
           ))}
           <input
             type="text"
+            role="combobox"
+            aria-expanded={showCityDropdown && visibleCities.length > 0}
+            aria-controls={cityListboxId}
+            aria-activedescendant={selectedCityIndex >= 0 ? `city-opt-${selectedCityIndex}` : undefined}
+            aria-autocomplete="list"
+            aria-label="Add city"
             value={locationInput}
-            onChange={(e) => { setLocationInput(e.target.value); setShowCityDropdown(true) }}
+            onChange={(e) => { setLocationInput(e.target.value); setShowCityDropdown(true); setSelectedCityIndex(-1) }}
             onFocus={() => setShowCityDropdown(true)}
             onKeyDown={handleLocationKeyDown}
-            placeholder={locations.length === 0 ? 'Add city...' : 'Add city...'}
+            placeholder="Add city..."
             className="flex-1 min-w-[80px] sm:min-w-[140px] bg-transparent text-sm text-white placeholder-white/25 outline-none"
           />
         </div>
-        {showCityDropdown && filteredCities.length > 0 && (
-          <ul className="absolute z-50 top-full left-0 right-0 mt-1 glass rounded-xl overflow-hidden border border-white/[0.08]">
-            {filteredCities.slice(0, 8).map(city => (
+        {showCityDropdown && visibleCities.length > 0 && (
+          <ul id={cityListboxId} role="listbox" className="absolute z-50 top-full left-0 right-0 mt-1 glass rounded-xl overflow-hidden border border-white/[0.08]">
+            {visibleCities.map((city, i) => (
               <li
                 key={city}
+                id={`city-opt-${i}`}
+                role="option"
+                aria-selected={i === selectedCityIndex}
                 onMouseDown={() => addLocation(city)}
-                className="px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.06] cursor-pointer transition-colors"
+                className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                  i === selectedCityIndex
+                    ? 'bg-white/[0.1] text-white'
+                    : 'text-white/60 hover:text-white hover:bg-white/[0.06]'
+                }`}
               >
                 {city}
               </li>

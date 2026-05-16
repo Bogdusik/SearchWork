@@ -56,7 +56,7 @@ export default function ApplicationsPage() {
       </h1>
       {error && <p className="text-rose-400 text-sm mb-4">Could not load applications. Please refresh.</p>}
       {loading ? (
-        <div className="flex justify-center py-12">
+        <div className="flex justify-center py-12" role="status" aria-label="Loading applications">
           <div className="w-6 h-6 border-2 border-indigo-500/50 border-t-indigo-400 rounded-full animate-spin" />
         </div>
       ) : (
