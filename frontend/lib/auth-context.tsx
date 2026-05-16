@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { api, setToken } from "@/lib/api";
 
-const TOKEN_KEY = "sw_access_token";
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 interface AuthUser {
   id: number;
@@ -11,7 +12,6 @@ interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null;
-  token: string | null;
   isAuthenticated: boolean;
   login: (token: string, user: AuthUser) => void;
   logout: () => Promise<void>;
@@ -20,48 +20,53 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY);
-    if (stored) {
-      setToken(stored);
-      fetchMe(stored).then(setUser).catch(() => clearState());
+    if (!document.cookie.includes("sw_authed=1")) {
+      setReady(true);
+      return;
     }
+    api.auth.refresh()
+      .then(({ access_token }) => {
+        setToken(access_token);
+        return api.auth.me();
+      })
+      .then(setUser)
+      .catch(() => {
+        setToken(null);
+        document.cookie = "sw_authed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      })
+      .finally(() => setReady(true));
   }, []);
 
   const login = useCallback((tok: string, usr: AuthUser) => {
-    localStorage.setItem(TOKEN_KEY, tok);
-    document.cookie = "sw_authed=1; path=/; SameSite=Lax";
     setToken(tok);
+    document.cookie = "sw_authed=1; path=/; SameSite=Lax";
     setUser(usr);
   }, []);
 
   const logout = useCallback(async () => {
-    const tok = localStorage.getItem(TOKEN_KEY);
-    if (tok) {
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/auth/logout`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${tok}` },
-          credentials: "include",
-        });
-      } catch {}
-    }
-    clearState();
+    try {
+      await fetch(`${BASE}/auth/logout`, { method: "POST", credentials: "include" });
+    } catch {}
+    setToken(null);
+    document.cookie = "sw_authed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    setUser(null);
     window.location.href = "/login";
   }, []);
 
-  function clearState() {
-    localStorage.removeItem(TOKEN_KEY);
-    document.cookie = "sw_authed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    setToken(null);
-    setUser(null);
+  if (!ready) {
+    return (
+      <div className="h-[100dvh] bg-[#030303] flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -71,12 +76,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
-}
-
-async function fetchMe(tok: string): Promise<AuthUser> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/auth/me`, {
-    headers: { Authorization: `Bearer ${tok}` },
-  });
-  if (!res.ok) throw new Error("unauthorized");
-  return res.json();
 }
