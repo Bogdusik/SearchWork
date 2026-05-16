@@ -7,6 +7,7 @@ import type { JobSearchResult } from '@/types'
 import { SearchBar } from '@/components/search/search-bar'
 import { JobCard } from '@/components/search/job-card'
 import { CoverLetterModal } from '@/components/ui/cover-letter-modal'
+import { JobCardSkeleton } from '@/components/ui/skeleton'
 
 export default function SearchPage() {
   const PAGE_SIZE = 20
@@ -66,16 +67,22 @@ export default function SearchPage() {
           {jobs.length} results · sorted by AI match score
         </p>
       )}
-      <div className="space-y-4">
-        {jobs.slice(0, page * PAGE_SIZE).map((job) => (
-          <JobCard
-            key={`${job.external_id}:${job.source}`}
-            job={job}
-            initialStatus={appStatuses[`${job.external_id}:${job.source}`]}
-            onCoverLetter={() => setCoverLetterJob(job)}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="space-y-4" role="status" aria-label="Searching for jobs">
+          {Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {jobs.slice(0, page * PAGE_SIZE).map((job) => (
+            <JobCard
+              key={`${job.external_id}:${job.source}`}
+              job={job}
+              initialStatus={appStatuses[`${job.external_id}:${job.source}`]}
+              onCoverLetter={() => setCoverLetterJob(job)}
+            />
+          ))}
+        </div>
+      )}
       {jobs.length > page * PAGE_SIZE && (
         <button
           onClick={() => setPage(p => p + 1)}

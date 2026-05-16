@@ -6,6 +6,7 @@ import type { Application, ApplicationStatus } from '@/types'
 import { StatusTabs } from '@/components/applications/status-tabs'
 import { ApplicationRow } from '@/components/applications/application-row'
 import { StatsRow } from '@/components/dashboard/stats-row'
+import { ApplicationRowSkeleton } from '@/components/ui/skeleton'
 
 type FilterValue = ApplicationStatus | 'all'
 
@@ -56,8 +57,8 @@ export default function ApplicationsPage() {
       </h1>
       {error && <p className="text-rose-400 text-sm mb-4">Could not load applications. Please refresh.</p>}
       {loading ? (
-        <div className="flex justify-center py-12" role="status" aria-label="Loading applications">
-          <div className="w-6 h-6 border-2 border-indigo-500/50 border-t-indigo-400 rounded-full animate-spin" />
+        <div className="space-y-3" role="status" aria-label="Loading applications">
+          {Array.from({ length: 4 }).map((_, i) => <ApplicationRowSkeleton key={i} />)}
         </div>
       ) : (
         <>
