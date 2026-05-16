@@ -4,24 +4,7 @@ import { useState } from 'react'
 import type { Application, ApplicationStatus } from '@/types'
 import { api } from '@/lib/api'
 import { CoverLetterModal } from '@/components/ui/cover-letter-modal'
-
-const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
-  { value: 'saved', label: 'Saved' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'applied', label: 'Applied' },
-  { value: 'interview', label: 'Interview' },
-  { value: 'offer', label: 'Offer' },
-  { value: 'rejected', label: 'Rejected' },
-]
-
-const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  saved: 'text-white/40',
-  in_progress: 'text-amber-400',
-  applied: 'text-emerald-400',
-  interview: 'text-indigo-400',
-  offer: 'text-yellow-300',
-  rejected: 'text-rose-400',
-}
+import { STATUS_OPTIONS, STATUS_COLORS } from '@/lib/constants'
 
 interface ApplicationRowProps {
   application: Application
