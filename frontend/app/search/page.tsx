@@ -9,7 +9,9 @@ import { JobCard } from '@/components/search/job-card'
 import { CoverLetterModal } from '@/components/ui/cover-letter-modal'
 
 export default function SearchPage() {
+  const PAGE_SIZE = 20
   const [jobs, setJobs] = useState<JobSearchResult[]>(searchStore.jobs)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(searchStore.searched)
@@ -35,6 +37,7 @@ export default function SearchPage() {
     try {
       const results = await api.jobs.search(query, locations)
       setJobs(results)
+      setPage(1)
       setSearched(true)
       searchStore.save(results, query, locations)
     } catch {
@@ -64,7 +67,7 @@ export default function SearchPage() {
         </p>
       )}
       <div className="space-y-4">
-        {jobs.map((job) => (
+        {jobs.slice(0, page * PAGE_SIZE).map((job) => (
           <JobCard
             key={`${job.external_id}:${job.source}`}
             job={job}
@@ -73,6 +76,14 @@ export default function SearchPage() {
           />
         ))}
       </div>
+      {jobs.length > page * PAGE_SIZE && (
+        <button
+          onClick={() => setPage(p => p + 1)}
+          className="w-full mt-4 py-3 rounded-xl text-sm text-white/40 hover:text-white/70 bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] transition-colors"
+        >
+          Load more · {jobs.length - page * PAGE_SIZE} remaining
+        </button>
+      )}
 
       <CoverLetterModal
         isOpen={coverLetterJob !== null}
