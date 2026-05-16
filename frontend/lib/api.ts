@@ -1,13 +1,17 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-const TOKEN_KEY = 'sw_access_token'
+
+let _token: string | null = null
+
+export function setToken(tok: string | null) {
+  _token = tok
+}
 
 function getToken(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem(TOKEN_KEY)
+  return _token
 }
 
 function clearAuth() {
-  localStorage.removeItem(TOKEN_KEY)
+  _token = null
   document.cookie = 'sw_authed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
 }
 
@@ -32,6 +36,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`)
+  if (res.status === 204) return undefined as T
   return res.json()
 }
 
@@ -46,6 +51,10 @@ export const api = {
       req<{ access_token: string; token_type: string }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
+      }),
+    refresh: () =>
+      req<{ access_token: string; token_type: string }>('/auth/refresh', {
+        method: 'POST',
       }),
     me: () =>
       req<{ id: number; email: string }>('/auth/me'),
@@ -93,13 +102,6 @@ export const api = {
         body: JSON.stringify({ status }),
       }),
     delete: (id: number) =>
-      fetch(`${BASE}/applications/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
-      }).then(r => {
-        if (r.status === 401) { clearAuth(); window.location.href = '/login' }
-        if (!r.ok) throw new Error(`API error ${r.status}`)
-      }),
+      req<void>(`/applications/${id}`, { method: 'DELETE' }),
   },
 }
