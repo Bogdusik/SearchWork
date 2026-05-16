@@ -5,6 +5,7 @@ import type { Application, ApplicationStatus } from '@/types'
 import { api } from '@/lib/api'
 import { CoverLetterModal } from '@/components/ui/cover-letter-modal'
 import { STATUS_OPTIONS, STATUS_COLORS } from '@/lib/constants'
+import { useToast } from '@/components/ui/toast'
 
 interface ApplicationRowProps {
   application: Application
@@ -13,6 +14,7 @@ interface ApplicationRowProps {
 }
 
 export function ApplicationRow({ application, onStatusChange, onDelete }: ApplicationRowProps) {
+  const { toast } = useToast()
   const [status, setStatus] = useState<ApplicationStatus>(application.status as ApplicationStatus)
   const [updating, setUpdating] = useState(false)
   const [showCoverLetter, setShowCoverLetter] = useState(false)
@@ -24,8 +26,10 @@ export function ApplicationRow({ application, onStatusChange, onDelete }: Applic
       setUpdating(true)
       try {
         await api.applications.delete(application.id)
+        toast('Application removed')
         onDelete?.(application.id)
-      } finally {
+      } catch {
+        toast('Failed to remove application', 'error')
         setUpdating(false)
       }
       return
@@ -39,6 +43,7 @@ export function ApplicationRow({ application, onStatusChange, onDelete }: Applic
       onStatusChange?.(application.id, newStatus)
     } catch {
       setStatus(application.status as ApplicationStatus)
+      toast('Failed to update status', 'error')
     } finally {
       setUpdating(false)
     }

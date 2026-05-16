@@ -68,10 +68,20 @@ export default function SearchPage() {
         initialLocations={searchStore.locations}
       />
       {error && <p className="text-rose-400 text-sm mb-4">{error}</p>}
-      {searched && !loading && (
+      {searched && !loading && jobs.length > 0 && (
         <p className="text-xs text-white/20 mb-4">
           {jobs.length} results · sorted by AI match score
         </p>
+      )}
+      {searched && !loading && jobs.length === 0 && !error && (
+        <div className="glass p-10 text-center space-y-3 mb-4">
+          <p className="text-2xl">🔍</p>
+          <p className="text-white/60 text-sm font-medium">No jobs found</p>
+          <p className="text-white/30 text-xs leading-relaxed">
+            Try a broader title (e.g. &ldquo;developer&rdquo; instead of &ldquo;React developer&rdquo;),
+            add more locations, or check that your CV is uploaded so AI scoring works.
+          </p>
+        </div>
       )}
       {loading ? (
         <div className="space-y-4" role="status" aria-label="Searching for jobs">

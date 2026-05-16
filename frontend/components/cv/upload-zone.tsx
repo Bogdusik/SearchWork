@@ -3,12 +3,14 @@
 import { useState, useCallback } from 'react'
 import { api } from '@/lib/api'
 import type { CVProfile } from '@/types'
+import { useToast } from '@/components/ui/toast'
 
 interface UploadZoneProps {
   onUpload: (profile: CVProfile) => void
 }
 
 export function UploadZone({ onUpload }: UploadZoneProps) {
+  const { toast } = useToast()
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,12 +25,13 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
     try {
       const profile = await api.cv.upload(file)
       onUpload(profile)
+      toast('CV analysed successfully')
     } catch {
       setError('Failed to process CV. Please try a different PDF.')
     } finally {
       setLoading(false)
     }
-  }, [onUpload])
+  }, [onUpload, toast])
 
   return (
     <div
