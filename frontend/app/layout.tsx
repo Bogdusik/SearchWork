@@ -6,6 +6,7 @@ import { RobotBackground } from '@/components/layout/robot-background'
 import { Navbar } from '@/components/layout/navbar'
 import { AuthProvider } from '@/lib/auth-context'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { ToastProvider } from '@/components/ui/toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,13 +26,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <AuthProvider>
-          <RobotBackground />
-          <div className="relative z-10 flex flex-col min-h-screen">
-            <Navbar />
-            <main id="main-content" className="flex-1 container mx-auto px-4 sm:px-6 py-8 max-w-5xl">
-              <ErrorBoundary>{children}</ErrorBoundary>
-            </main>
-          </div>
+          <ToastProvider>
+            <RobotBackground />
+            <div className="relative z-10 flex flex-col min-h-screen">
+              <Navbar />
+              <main id="main-content" className="flex-1 container mx-auto px-4 sm:px-6 py-8 max-w-5xl">
+                <ErrorBoundary>{children}</ErrorBoundary>
+              </main>
+            </div>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>
