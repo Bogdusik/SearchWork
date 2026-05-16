@@ -151,7 +151,7 @@ export function SearchBar({
             onFocus={() => setShowCityDropdown(true)}
             onKeyDown={handleLocationKeyDown}
             placeholder={locations.length === 0 ? 'Add city...' : 'Add city...'}
-            className="flex-1 min-w-[140px] bg-transparent text-sm text-white placeholder-white/25 outline-none"
+            className="flex-1 min-w-[80px] sm:min-w-[140px] bg-transparent text-sm text-white placeholder-white/25 outline-none"
           />
         </div>
         {showCityDropdown && filteredCities.length > 0 && (
