@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -8,12 +7,9 @@ from auth import get_current_user
 from database import get_db
 from models import Application, SavedJob, User
 from schemas import ApplicationOut, ApplicationCreate, ApplicationUpdate
+from utils import _utcnow
 
 router = APIRouter()
-
-
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 @router.get("/applications", response_model=list[ApplicationOut])

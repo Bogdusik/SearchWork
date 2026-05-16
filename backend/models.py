@@ -1,13 +1,10 @@
-from datetime import datetime, timezone
-
-def _utcnow() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None)
-
 import json
-from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, Boolean
+from datetime import datetime
+from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy import TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
+from utils import _utcnow
 
 
 class JSONList(TypeDecorator):
@@ -57,6 +54,7 @@ class CVProfile(Base):
 
 class SavedJob(Base):
     __tablename__ = "saved_jobs"
+    __table_args__ = (UniqueConstraint("user_id", "external_id", "source", name="uq_saved_jobs_user_job"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     external_id: Mapped[str] = mapped_column(String)
@@ -79,6 +77,7 @@ class SavedJob(Base):
 
 class CoverLetter(Base):
     __tablename__ = "cover_letters"
+    __table_args__ = (UniqueConstraint("user_id", "external_id", "source", name="uq_cover_letters_user_job"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     external_id: Mapped[str] = mapped_column(String)
