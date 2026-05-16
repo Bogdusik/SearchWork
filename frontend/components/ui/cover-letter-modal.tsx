@@ -58,10 +58,11 @@ export function CoverLetterModal({ isOpen, onClose, externalId, source, jobTitle
 
       <div
         className={`fixed top-0 right-0 h-full w-full sm:w-[480px] z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex flex-col h-full backdrop-blur-xl bg-white/[0.04] border-l border-white/[0.08] shadow-2xl">
 
-          <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4 border-b border-white/[0.06] shrink-0">
+          <div className="flex items-start justify-between gap-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-white/[0.06] shrink-0">
             <div>
               <p className="text-xs text-white/30 uppercase tracking-widest mb-1">Cover Letter</p>
               <h2 className="text-sm font-semibold text-white/90 leading-snug">{jobTitle}</h2>
