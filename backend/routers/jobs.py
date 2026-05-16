@@ -1,6 +1,9 @@
 import asyncio
+import logging
 import re
 from fastapi import APIRouter, Query, Depends, Request
+
+logger = logging.getLogger(__name__)
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -102,7 +105,9 @@ async def _fetch_for_location(query: str, where: str) -> list[dict]:
     )
     jobs: list[dict] = []
     for result in results:
-        if isinstance(result, list):
+        if isinstance(result, Exception):
+            logger.warning("Job service error for location %r: %s", where, result)
+        elif isinstance(result, list):
             jobs += result
     return jobs
 
