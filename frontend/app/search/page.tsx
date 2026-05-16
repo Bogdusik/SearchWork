@@ -18,11 +18,8 @@ export default function SearchPage() {
   const [coverLetterJob, setCoverLetterJob] = useState<JobSearchResult | null>(null)
 
   useEffect(() => {
-    api.cv.get().then(cv => {
+    Promise.all([api.cv.get(), api.applications.list()]).then(([cv, apps]) => {
       if (cv?.job_titles?.length) setJobTitles(cv.job_titles)
-    }).catch(() => {})
-
-    api.applications.list().then(apps => {
       const map: Record<string, string> = {}
       apps.forEach(app => {
         map[`${app.job.external_id}:${app.job.source}`] = app.status
