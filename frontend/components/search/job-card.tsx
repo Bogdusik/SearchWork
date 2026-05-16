@@ -2,6 +2,7 @@
 
 import type { JobSearchResult } from '@/types'
 import { api } from '@/lib/api'
+import { STATUS_COLORS, STATUS_LABELS } from '@/lib/constants'
 import { useState, useEffect } from 'react'
 
 interface JobCardProps {
@@ -17,23 +18,6 @@ const matchColor = (score: number) =>
   score >= 60 ? 'bg-indigo-500/15 text-indigo-400' :
   'bg-white/5 text-white/40'
 
-const STATUS_LABEL: Record<string, string> = {
-  saved: 'Saved',
-  in_progress: '⏳ In Progress',
-  applied: '✅ Applied',
-  interview: '🎯 Interview',
-  offer: '🎉 Offer',
-  rejected: 'Rejected',
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  saved: 'text-white/40',
-  in_progress: 'text-amber-400',
-  applied: 'text-emerald-400',
-  interview: 'text-indigo-400',
-  offer: 'text-yellow-300',
-  rejected: 'text-rose-400',
-}
 
 export function JobCard({ job, initialStatus, onCoverLetter }: JobCardProps) {
   const [status, setStatus] = useState<CardStatus>(
@@ -136,8 +120,8 @@ export function JobCard({ job, initialStatus, onCoverLetter }: JobCardProps) {
       {actionError && <p className="text-rose-400 text-xs">{actionError}</p>}
       <div className="flex flex-wrap items-center gap-2 pt-1">
         {status !== 'idle' ? (
-          <span className={`text-xs px-4 py-1.5 ${STATUS_COLOR[status] ?? 'text-white/40'}`}>
-            {STATUS_LABEL[status] ?? status}
+          <span className={`text-xs px-4 py-1.5 ${STATUS_COLORS[status] ?? 'text-white/40'}`}>
+            {STATUS_LABELS[status] ?? status}
           </span>
         ) : (
           <>
