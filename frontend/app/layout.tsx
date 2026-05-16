@@ -11,8 +11,15 @@ import { ToastProvider } from '@/components/ui/toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SearchWork',
-  description: 'AI-powered UK graduate job finder',
+  title: {
+    default: 'SearchWork',
+    template: '%s · SearchWork',
+  },
+  description: 'AI-powered UK graduate job tracker. Upload your CV, score job matches across 12 job boards, generate cover letters, and track applications — all in one place.',
+  openGraph: {
+    siteName: 'SearchWork',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
