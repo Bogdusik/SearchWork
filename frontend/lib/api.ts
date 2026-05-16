@@ -83,10 +83,10 @@ export const api = {
       }).then(d => d.content),
   },
   jobs: {
-    search: (q: string, locations: string[] = []) => {
+    search: (q: string, locations: string[] = [], signal?: AbortSignal) => {
       const params = new URLSearchParams({ q })
       locations.forEach(l => params.append('locations', l))
-      return req<import('@/types').JobSearchResult[]>(`/jobs?${params}`)
+      return req<import('@/types').JobSearchResult[]>(`/jobs?${params}`, { signal })
     },
   },
   applications: {

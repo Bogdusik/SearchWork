@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api } from '@/lib/api'
 import { searchStore } from '@/lib/search-store'
 import type { JobSearchResult } from '@/types'
@@ -11,6 +11,7 @@ import { JobCardSkeleton } from '@/components/ui/skeleton'
 
 export default function SearchPage() {
   const PAGE_SIZE = 20
+  const abortRef = useRef<AbortController | null>(null)
   const [jobs, setJobs] = useState<JobSearchResult[]>(searchStore.jobs)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -32,16 +33,21 @@ export default function SearchPage() {
   }, [])
 
   const handleSearch = async (query: string, locations: string[]) => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     setError(null)
     setJobs([])
     try {
-      const results = await api.jobs.search(query, locations)
+      const results = await api.jobs.search(query, locations, controller.signal)
       setJobs(results)
       setPage(1)
       setSearched(true)
       searchStore.save(results, query, locations)
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       setError('Search failed. Make sure your CV is uploaded first.')
     } finally {
       setLoading(false)
