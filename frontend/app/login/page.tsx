@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api";
+import { api, setToken } from "@/lib/api";
 
 type Tab = "login" | "register";
 
@@ -23,10 +23,12 @@ export default function LoginPage() {
         tab === "login"
           ? await api.auth.login(email, password)
           : await api.auth.register(email, password);
+      setToken(res.access_token);
       const user = await api.auth.me();
       login(res.access_token, user);
       window.location.href = "/applications";
     } catch (err: unknown) {
+      setToken(null);
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg.replace(/^API error \d+: /, ""));
     } finally {
