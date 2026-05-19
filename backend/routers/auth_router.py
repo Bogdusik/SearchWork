@@ -30,6 +30,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
 
 _SECURE_COOKIE = os.getenv("ENV", "development") != "development"
+_SAMESITE = "none" if _SECURE_COOKIE else "lax"
 _GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 _GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 _GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
@@ -42,7 +43,7 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
         value=token,
         httponly=True,
         secure=_SECURE_COOKIE,
-        samesite="lax",
+        samesite=_SAMESITE,
         max_age=7 * 24 * 60 * 60,
         path="/auth/refresh",
     )
@@ -205,7 +206,7 @@ async def google_callback(code: str, state: str, response: Response, db: AsyncSe
         value=refresh,
         httponly=True,
         secure=_SECURE_COOKIE,
-        samesite="lax",
+        samesite=_SAMESITE,
         max_age=7 * 24 * 60 * 60,
         path="/auth/refresh",
     )
