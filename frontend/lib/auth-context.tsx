@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
 import { api, setToken } from "@/lib/api";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -22,12 +22,18 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
+  const refreshStarted = useRef(false);
 
   useEffect(() => {
+    if (refreshStarted.current) return;
+    refreshStarted.current = true;
+
     if (!document.cookie.includes("sw_authed=1")) {
       setReady(true);
       return;
     }
+
+    let willRedirect = false;
     api.auth.refresh()
       .then(({ access_token }) => {
         setToken(access_token);
@@ -37,8 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         setToken(null);
         document.cookie = "sw_authed=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        willRedirect = true;
+        window.location.href = "/login";
       })
-      .finally(() => setReady(true));
+      .finally(() => {
+        if (!willRedirect) setReady(true);
+      });
   }, []);
 
   const login = useCallback((tok: string, usr: AuthUser) => {
