@@ -15,7 +15,7 @@ from models import CVProfile, User
 from schemas import JobSearchResult
 
 limiter = Limiter(key_func=get_remote_address)
-from services import adzuna_service, reed_service, jsearch_service, remotive_service, weworkremotely_service, jobicy_service, arbeitnow_service, gradcracker_service, totaljobs_service, cwjobs_service, prospects_service, indeed_service
+from services import adzuna_service, reed_service, jsearch_service, remotive_service, weworkremotely_service, jobicy_service, arbeitnow_service, gradcracker_service, totaljobs_service, cwjobs_service, prospects_service
 from services.ai_service import score_job_match
 
 router = APIRouter()
@@ -100,7 +100,6 @@ async def _fetch_for_location(query: str, where: str) -> list[dict]:
         totaljobs_service.search_jobs(query, location=where),
         cwjobs_service.search_jobs(query, location=where),
         prospects_service.search_jobs(query, location=where),
-        indeed_service.search_jobs(query, location=where),
         return_exceptions=True,
     )
     jobs: list[dict] = []
