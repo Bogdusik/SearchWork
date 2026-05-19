@@ -50,6 +50,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={isAuthenticated}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-sm transition-colors duration-150',
                   isActive(link.href)
@@ -96,6 +97,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={isAuthenticated}
                 onClick={() => setOpen(false)}
                 className={cn(
                   'px-4 py-3 rounded-xl text-sm transition-colors',

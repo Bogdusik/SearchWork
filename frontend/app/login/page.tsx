@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 
@@ -9,7 +8,6 @@ type Tab = "login" | "register";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const router = useRouter();
   const [tab, setTab] = useState<Tab>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +25,7 @@ export default function LoginPage() {
           : await api.auth.register(email, password);
       const user = await api.auth.me();
       login(res.access_token, user);
-      router.push("/applications");
+      window.location.href = "/applications";
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg.replace(/^API error \d+: /, ""));
