@@ -142,7 +142,7 @@ POST /cv/cover-letter
 GET /jobs?q=<query>&locations=<city>&locations=<city>
   Rate limited: 10/minute per IP.
   Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow,
-  Gradcracker, Totaljobs, CWJobs, Prospects, Indeed in parallel.
+  Gradcracker, Totaljobs, CWJobs, Prospects in parallel.
   Filters to UK-only, junior-level, no security clearance.
   Scores each job against CV skills via Claude AI.
   Response: list of JobSearchResult, sorted by match_score descending.
