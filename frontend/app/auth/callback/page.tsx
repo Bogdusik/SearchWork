@@ -1,32 +1,31 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api, setToken } from "@/lib/api";
 
 function CallbackInner() {
   const params = useSearchParams();
-  const router = useRouter();
   const { login } = useAuth();
 
   useEffect(() => {
     const token = params.get("access_token");
     if (!token) {
-      router.replace("/login");
+      window.location.href = "/login";
       return;
     }
     setToken(token);
     api.auth.me()
       .then((user) => {
         login(token, user);
-        router.replace("/applications");
+        window.location.href = "/applications";
       })
       .catch(() => {
         setToken(null);
-        router.replace("/login");
+        window.location.href = "/login";
       });
-  }, [params, router, login]);
+  }, [params, login]);
 
   return (
     <main className="h-[100dvh] overflow-hidden flex items-center justify-center">
