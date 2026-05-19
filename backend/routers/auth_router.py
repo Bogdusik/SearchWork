@@ -29,7 +29,7 @@ from schemas import LoginRequest, RegisterRequest, TokenOut, UserOut
 router = APIRouter(prefix="/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
 
-_SECURE_COOKIE = os.getenv("ENV") != "development"
+_SECURE_COOKIE = os.getenv("ENV", "development") != "development"
 _GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 _GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 _GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
