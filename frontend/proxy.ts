@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 const PROTECTED = ["/applications", "/cv", "/search"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
