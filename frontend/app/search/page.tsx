@@ -20,6 +20,7 @@ export default function SearchPage() {
   const [jobTitles, setJobTitles] = useState<string[]>([])
   const [appStatuses, setAppStatuses] = useState<Record<string, string>>({})
   const [coverLetterJob, setCoverLetterJob] = useState<JobSearchResult | null>(null)
+  const [hideZeroMatch, setHideZeroMatch] = useState(true)
 
   useEffect(() => {
     Promise.all([api.cv.get(), api.applications.list()]).then(([cv, apps]) => {
@@ -68,11 +69,28 @@ export default function SearchPage() {
         initialLocations={searchStore.locations}
       />
       {error && <p className="text-rose-400 text-sm mb-4">{error}</p>}
-      {searched && !loading && jobs.length > 0 && (
-        <p className="text-xs text-white/20 mb-4">
-          {jobs.length} results · sorted by AI match score
-        </p>
-      )}
+      {searched && !loading && jobs.length > 0 && (() => {
+        const visibleJobs = hideZeroMatch ? jobs.filter(j => j.match_score > 0) : jobs
+        const hiddenCount = jobs.length - visibleJobs.length
+        return (
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-white/20">
+              {visibleJobs.length} results · sorted by AI match score
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                onClick={() => setHideZeroMatch(v => !v)}
+                className={`relative w-8 h-4 rounded-full transition-colors ${hideZeroMatch ? 'bg-indigo-500/50' : 'bg-white/10'}`}
+              >
+                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${hideZeroMatch ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </div>
+              <span className="text-xs text-white/30">
+                Hide 0% matches{hiddenCount > 0 ? ` (${hiddenCount})` : ''}
+              </span>
+            </label>
+          </div>
+        )
+      })()}
       {searched && !loading && jobs.length === 0 && !error && (
         <div className="glass p-10 text-center space-y-3 mb-4">
           <p className="text-2xl">🔍</p>
@@ -87,26 +105,31 @@ export default function SearchPage() {
         <div className="space-y-4" role="status" aria-label="Searching for jobs">
           {Array.from({ length: 5 }).map((_, i) => <JobCardSkeleton key={i} />)}
         </div>
-      ) : (
-        <div className="space-y-4">
-          {jobs.slice(0, page * PAGE_SIZE).map((job) => (
-            <JobCard
-              key={`${job.external_id}:${job.source}`}
-              job={job}
-              initialStatus={appStatuses[`${job.external_id}:${job.source}`]}
-              onCoverLetter={() => setCoverLetterJob(job)}
-            />
-          ))}
-        </div>
-      )}
-      {jobs.length > page * PAGE_SIZE && (
-        <button
-          onClick={() => setPage(p => p + 1)}
-          className="w-full mt-4 py-3 rounded-xl text-sm text-white/40 hover:text-white/70 bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] transition-colors"
-        >
-          Load more · {jobs.length - page * PAGE_SIZE} remaining
-        </button>
-      )}
+      ) : (() => {
+        const visibleJobs = hideZeroMatch ? jobs.filter(j => j.match_score > 0) : jobs
+        return (
+          <>
+            <div className="space-y-4">
+              {visibleJobs.slice(0, page * PAGE_SIZE).map((job) => (
+                <JobCard
+                  key={`${job.external_id}:${job.source}`}
+                  job={job}
+                  initialStatus={appStatuses[`${job.external_id}:${job.source}`]}
+                  onCoverLetter={() => setCoverLetterJob(job)}
+                />
+              ))}
+            </div>
+            {visibleJobs.length > page * PAGE_SIZE && (
+              <button
+                onClick={() => setPage(p => p + 1)}
+                className="w-full mt-4 py-3 rounded-xl text-sm text-white/40 hover:text-white/70 bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] transition-colors"
+              >
+                Load more · {visibleJobs.length - page * PAGE_SIZE} remaining
+              </button>
+            )}
+          </>
+        )
+      })()}
 
       <CoverLetterModal
         isOpen={coverLetterJob !== null}
