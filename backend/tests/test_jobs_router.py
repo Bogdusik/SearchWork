@@ -26,3 +26,17 @@ async def test_search_jobs_returns_sorted_by_match_score(client):
 async def test_search_jobs_requires_query(client):
     resp = await client.get("/jobs")
     assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_small_towns_are_searched_with_wider_radius(client):
+    with patch("routers.jobs.adzuna_service.search_jobs", new_callable=AsyncMock, return_value=[]) as adzuna, \
+         patch("routers.jobs.reed_service.search_jobs", new_callable=AsyncMock, return_value=[]) as reed, \
+         patch("routers.jobs.get_cv_profile", new_callable=AsyncMock, return_value=[]):
+        resp = await client.get("/jobs?q=developer&locations=Dumfries&locations=carlisle&locations=London")
+
+    assert resp.status_code == 200
+    adzuna_radius = {c.kwargs["where"]: c.kwargs["distance_miles"] for c in adzuna.call_args_list}
+    reed_radius = {c.kwargs["location_name"]: c.kwargs["distance_miles"] for c in reed.call_args_list}
+    assert adzuna_radius == {"Dumfries": 40, "carlisle": 40, "London": None}
+    assert reed_radius == {"Dumfries": 40, "carlisle": 40, "London": None}

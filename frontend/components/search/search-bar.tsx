@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, KeyboardEvent, useId } from 'react'
 
 const UK_CITIES = [
-  'Glasgow', 'Edinburgh', 'Newcastle upon Tyne', 'Leeds', 'Manchester', 'Liverpool',
+  'Glasgow', 'Edinburgh', 'Dumfries', 'Carlisle', 'Newcastle upon Tyne', 'Leeds', 'Manchester', 'Liverpool',
   'London', 'Birmingham', 'Bristol', 'Sheffield', 'Nottingham',
   'Oxford', 'Cambridge', 'Reading', 'Cardiff', 'Belfast', 'Remote',
 ]

@@ -11,12 +11,19 @@ def _auth_header() -> str:
     return f"Basic {token}"
 
 
-async def search_jobs(query: str, location_name: str = "United Kingdom", results_per_page: int = 20) -> list[dict]:
+async def search_jobs(
+    query: str,
+    location_name: str = "United Kingdom",
+    results_per_page: int = 20,
+    distance_miles: int | None = None,
+) -> list[dict]:
     params = {
         "keywords": query,
         "locationName": location_name,
         "resultsToTake": results_per_page,
     }
+    if distance_miles:
+        params["distanceFromLocation"] = distance_miles
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
             BASE_URL,

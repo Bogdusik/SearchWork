@@ -4,9 +4,15 @@ import httpx
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
 BASE_URL = "https://api.adzuna.com/v1/api/jobs/gb/search/1"
+KM_PER_MILE = 1.609
 
 
-async def search_jobs(query: str, where: str = "UK", results_per_page: int = 20) -> list[dict]:
+async def search_jobs(
+    query: str,
+    where: str = "UK",
+    results_per_page: int = 20,
+    distance_miles: int | None = None,
+) -> list[dict]:
     params = {
         "app_id": ADZUNA_APP_ID,
         "app_key": ADZUNA_APP_KEY,
@@ -15,6 +21,8 @@ async def search_jobs(query: str, where: str = "UK", results_per_page: int = 20)
         "results_per_page": results_per_page,
         "content-type": "application/json",
     }
+    if distance_miles:
+        params["distance"] = round(distance_miles * KM_PER_MILE)
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(BASE_URL, params=params)
         resp.raise_for_status()

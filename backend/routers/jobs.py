@@ -22,6 +22,11 @@ router = APIRouter()
 
 DEFAULT_LOCATIONS = ["Glasgow", "Edinburgh", "Newcastle upon Tyne", "Leeds", "Manchester", "Liverpool"]
 
+LOCATION_RADIUS_MILES = {
+    "dumfries": 40,
+    "carlisle": 40,
+}
+
 _NON_UK_LOCATION = re.compile(
     r'\b(USA|United States|U\.S\.A\.?|Canada|Australia|New Zealand|'
     r'Germany|France|Spain|Netherlands|Poland|Romania|India|'
@@ -88,9 +93,10 @@ async def get_cv_profile(db: AsyncSession, user_id: int) -> list[str]:
 
 
 async def _fetch_for_location(query: str, where: str) -> list[dict]:
+    radius = LOCATION_RADIUS_MILES.get(where.strip().lower())
     results = await asyncio.gather(
-        adzuna_service.search_jobs(query, where=where),
-        reed_service.search_jobs(query, location_name=where),
+        adzuna_service.search_jobs(query, where=where, distance_miles=radius),
+        reed_service.search_jobs(query, location_name=where, distance_miles=radius),
         jsearch_service.search_jobs(query, location=where),
         remotive_service.search_jobs(query, location=where),
         weworkremotely_service.search_jobs(query, location=where),
