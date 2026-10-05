@@ -143,6 +143,8 @@ GET /jobs?q=<query>&locations=<city>&locations=<city>
   Rate limited: 10/minute per IP.
   Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow,
   Gradcracker, Totaljobs, CWJobs, Prospects in parallel.
+  Small towns (Dumfries, Carlisle) are searched with a 40-mile radius on Adzuna/Reed;
+  other cities use each API's default radius.
   Filters to UK-only, junior-level, no security clearance.
   Scores each job against CV skills via Claude AI.
   Response: list of JobSearchResult, sorted by match_score descending.

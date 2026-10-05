@@ -52,3 +52,25 @@ async def test_search_jobs_returns_empty_list_on_no_results():
         results = await search_jobs("xyzzy nonexistent job")
 
     assert results == []
+
+
+@pytest.mark.asyncio
+async def test_search_jobs_sends_distance_in_km_when_radius_given():
+    mock_resp = MagicMock()
+    mock_resp.json = MagicMock(return_value={"results": []})
+    mock_resp.raise_for_status = MagicMock()
+
+    with patch("services.adzuna_service.httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=mock_resp)
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        await search_jobs("developer", where="Dumfries", distance_miles=40)
+        params_with_radius = mock_client.get.call_args.kwargs["params"]
+
+        await search_jobs("developer", where="London")
+        params_default = mock_client.get.call_args.kwargs["params"]
+
+    assert params_with_radius["distance"] == 64
+    assert "distance" not in params_default
