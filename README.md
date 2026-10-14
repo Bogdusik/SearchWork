@@ -1,6 +1,6 @@
 # SearchWork
 
-A personal job tracker built for UK graduate and junior developer roles. Upload your CV, let AI extract your skills and score job matches, search across 12 job boards simultaneously, generate tailored cover letters, and track your applications — all in one place.
+A personal job tracker built for UK graduate and junior developer roles. Upload your CV, let AI extract your skills and score job matches, search across 11 job boards simultaneously, generate tailored cover letters, and track your applications — all in one place.
 
 **Live demo:** https://searchwork-bogdusik.vercel.app
 
@@ -9,7 +9,7 @@ A personal job tracker built for UK graduate and junior developer roles. Upload 
 ## Features
 
 - **AI-Powered CV Analysis** — Upload a PDF and Claude (Anthropic) extracts your skills, experience, and target roles automatically
-- **Multi-Source Job Search** — Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow, Gradcracker, Totaljobs, CWJobs, Prospects, and Indeed simultaneously; deduplicates results; filters to UK-only junior roles
+- **Multi-Source Job Search** — Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow, Gradcracker, Totaljobs, CWJobs, Prospects, simultaneously; deduplicates results; filters to UK-only junior roles
 - **AI Match Scoring** — Claude scores each job against your CV profile (0–100%) with matched and missing skills breakdown
 - **Cover Letter Generation** — Generates and caches tailored cover letters per job; supports regeneration
 - **CV Analysis** — Full ATS review with critical issues, structural feedback, and a prioritised action table
