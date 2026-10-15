@@ -9,7 +9,7 @@ A personal job tracker built for UK graduate and junior developer roles. Upload 
 ## Features
 
 - **AI-Powered CV Analysis** — Upload a PDF and Claude (Anthropic) extracts your skills, experience, and target roles automatically
-- **Multi-Source Job Search** — Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow, Gradcracker, Totaljobs, CWJobs, Prospects, simultaneously; deduplicates results; filters to UK-only junior roles
+- **Multi-Source Job Search** — Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow, Gradcracker, Totaljobs, CWJobs, and Prospects simultaneously; deduplicates results; filters to UK-only junior roles
 - **AI Match Scoring** — Claude scores each job against your CV profile (0–100%) with matched and missing skills breakdown
 - **Cover Letter Generation** — Generates and caches tailored cover letters per job; supports regeneration
 - **CV Analysis** — Full ATS review with critical issues, structural feedback, and a prioritised action table
@@ -157,7 +157,7 @@ Key endpoints:
 
 - **Async SQLAlchemy in production** — `AsyncSession`, `selectinload`, avoiding `MissingGreenlet` pitfalls
 - **Claude API for structured extraction** — prompt engineering for skills, scoring, and review rather than generic chat
-- **Multi-source API aggregation** — normalising 12 inconsistent job APIs (different auth methods, salary fields, rate limits) into a single schema
+- **Multi-source API aggregation** — normalising 11 inconsistent job APIs (different auth methods, salary fields, rate limits) into a single schema
 - **Full-stack deployment** — Vercel + Railway, cross-environment CORS, Railway Railpack build system
 - **XSS-safe auth** — access token in memory (module-level variable) instead of localStorage; refresh token in httpOnly cookie
 - **Accessibility** — WCAG 2.1 patterns: combobox keyboard nav, focus traps, skip links, `aria-live` regions, `role="tab"` patterns
