@@ -6,7 +6,7 @@ CV upload → AI skill extraction → job search (Adzuna + Reed) → AI match sc
 ## Active Learning Session
 
 Bohdan is working through a Claude Code deep-dive curriculum using this project as a practice base.
-**Current progress and next steps:** see `PROGRESS.md` in the project root.
+**Current progress and next steps:** see `PROGRESS.md` in the project root (kept locally, not committed).
 **Full plan:** `~/.claude/plans/goofy-sauteeing-swan.md`
 
 ## Stack
