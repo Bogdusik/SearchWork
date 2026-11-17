@@ -45,3 +45,6 @@ backend/.pytest_cache/
 
 # Docs cache
 docs/superpowers/
+
+# Personal Claude Code session notes (kept locally)
+PROGRESS.md
