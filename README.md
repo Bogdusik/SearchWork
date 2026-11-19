@@ -1,39 +1,98 @@
+<div align="center">
+
+<img src="docs/media/demo.gif" alt="Searching for graduate software engineer roles: results arrive sorted by AI match score, the reasoning expands to show matched and missing skills, a tailored cover letter opens, then the application tracker" width="860">
+
 # SearchWork
 
-A personal job tracker built for UK graduate and junior developer roles. Upload your CV, let AI extract your skills and score job matches, search across 11 job boards simultaneously, generate tailored cover letters, and track your applications — all in one place.
+**One search across 11 UK job boards. Claude reads your CV, scores every vacancy against it and writes the cover letter.**
 
-**Live demo:** https://searchwork-bogdusik.vercel.app
+[![CI](https://github.com/Bogdusik/SearchWork/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Bogdusik/SearchWork/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/live_demo-searchwork-818cf8?logo=vercel&logoColor=white)](https://searchwork-bogdusik.vercel.app)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Claude API](https://img.shields.io/badge/Claude-API-D97757?logo=anthropic&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2EA44F)](LICENSE)
 
----
+[Live demo](https://searchwork-bogdusik.vercel.app) · [How a search works](#how-a-search-works) · [Run it locally](#running-locally) · [API](#api)
 
-## Features
+</div>
 
-- **AI-Powered CV Analysis** — Upload a PDF and Claude (Anthropic) extracts your skills, experience, and target roles automatically
-- **Multi-Source Job Search** — Searches Adzuna, Reed, JSearch, Remotive, WeWorkRemotely, Jobicy, Arbeitnow, Gradcracker, Totaljobs, CWJobs, and Prospects simultaneously; deduplicates results; filters to UK-only junior roles
-- **AI Match Scoring** — Claude scores each job against your CV profile (0–100%) with matched and missing skills breakdown
-- **Cover Letter Generation** — Generates and caches tailored cover letters per job; supports regeneration
-- **CV Analysis** — Full ATS review with critical issues, structural feedback, and a prioritised action table
-- **Application Tracker** — Status tracking (Saved → In Progress → Applied → Interview → Offer → Rejected) with stats overview
-- **JWT + Google OAuth Auth** — Access token stored in memory (XSS-safe), refresh token in httpOnly cookie, 7-day rotation
-- **Dark UI** — Frosted glass cards, Spline 3D robot background, Spotlight cursor, skip-to-content, full keyboard navigation
+I built SearchWork for my own graduate job search. Job boards each show a slice of the market, most "graduate" listings are not, and reading a hundred adverts to find the ten that fit is slow. SearchWork asks all the boards at once, drops what I can't apply for and ranks the rest by how well they match my CV.
 
----
+<sub>Screenshots and the GIF use a fictional demo profile and made-up companies.</sub>
 
-## Tech Stack
+## What it does
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/media/search.png" alt="Job search results sorted by match score, with the first card expanded to show matched skills in green and a missing skill in red"><br>
+<b>Search and rank.</b> One query fans out to 11 job sources across your chosen cities. Results come back deduplicated, filtered to UK junior roles and sorted by AI match score. "Why this score?" shows the matched and missing skills.
+</td>
+<td width="50%" valign="top">
+<img src="docs/media/cover-letter.png" alt="Cover letter side panel generated for a graduate backend role, with copy and regenerate buttons"><br>
+<b>Cover letter in one click.</b> Claude writes a letter from your CV and the advert. It is cached per job, so reopening it is free; Regenerate asks for a new one.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/media/cv-review.png" alt="CV analysis for a target role: summary, critical, structural and polish issues, and a priority table with impact labels"><br>
+<b>CV review for a target role.</b> An ATS-style review grouped into critical, structural and polish issues, with a prioritised action table.
+</td>
+<td width="50%" valign="top">
+<img src="docs/media/applications.png" alt="Application tracker with totals, status tabs and rows showing match score, skills and status"><br>
+<b>Application tracker.</b> Save a job and move it through Saved → In Progress → Applied → Interview → Offer / Rejected, with totals at the top.
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>More screens</b>: CV profile and sign-in</summary>
+<br>
+<p>
+  <img src="docs/media/cv-profile.png" alt="CV profile page with skills and target roles extracted from the uploaded PDF" width="49%">
+  <img src="docs/media/login.png" alt="Sign-in page over the 3D robot background, with email and Google sign-in" width="49%">
+</p>
+</details>
+
+## How a search works
+
+```mermaid
+flowchart TB
+  Q["GET /jobs · query + cities"] --> A1 & A2 & A3
+
+  subgraph F["11 sources × every city, in parallel"]
+    A1["Adzuna · Reed · JSearch"]
+    A2["Remotive · WeWorkRemotely<br/>Jobicy · Arbeitnow"]
+    A3["Gradcracker · Totaljobs<br/>CWJobs · Prospects"]
+  end
+
+  A1 & A2 & A3 --> D["Deduplicate by external_id + source"]
+  D --> X["Filter in code<br/>UK only · junior titles · no clearance or citizenship requirement"]
+  X --> S["Claude scores each job against the CV, in parallel"]
+  CV[("PostgreSQL<br/>parsed CV profile")] -.-> S
+  S --> R["Sorted by match %, with matched and missing skills"]
+```
+
+- **One failing source never breaks a search.** Every source runs under `asyncio.gather(..., return_exceptions=True)`; a source that errors is logged and skipped.
+- **Filters run in code, not in the prompt.** Senior titles, non-UK locations and adverts that require security clearance or British citizenship are removed before anything is sent to Claude, so no tokens are spent on jobs I can't apply for.
+- **Rate limited.** `/jobs` is limited to 10 requests a minute per client with slowapi, because one search can mean hundreds of upstream calls.
+
+## Tech stack
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 14 App Router, React, TypeScript, Tailwind CSS |
-| Backend | FastAPI (Python), SQLAlchemy 2.0 async, Pydantic v2 |
-| Database | PostgreSQL (asyncpg) |
-| AI | Claude API (Anthropic) — CV parsing, match scoring, cover letter generation |
-| Auth | JWT (PyJWT) + Google OAuth 2.0, bcrypt password hashing |
-| Rate limiting | slowapi |
-| Deployment | Vercel (frontend) + Railway (backend + PostgreSQL) |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Framer Motion, Spline 3D |
+| Backend | FastAPI, SQLAlchemy 2.0 async, Pydantic v2, slowapi |
+| Database | PostgreSQL 16 (asyncpg) |
+| AI | Claude API: CV parsing, match scoring, CV review, cover letters |
+| Auth | JWT (PyJWT) + Google OAuth 2.0, bcrypt; access token in memory, refresh token in an httpOnly cookie |
+| Tests and CI | pytest (backend), type-check and build (frontend), Playwright mobile layout tests; GitHub Actions on every push |
+| Deployment | Vercel (frontend), Railway (backend + PostgreSQL) |
 
----
-
-## Project Structure
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 SearchWork/
@@ -51,59 +110,66 @@ SearchWork/
 │   │   ├── layout/             # Navbar, RobotBackground
 │   │   ├── search/             # JobCard, SearchBar
 │   │   └── ui/                 # ErrorBoundary, Toast, Skeleton, CoverLetterModal, …
-│   └── lib/                    # api.ts, auth-context.tsx, constants.ts, search-store.ts
+│   ├── lib/                    # api.ts, auth-context.tsx, constants.ts, search-store.ts
+│   └── tests/mobile/           # Playwright layout tests
 ├── backend/
 │   ├── routers/                # auth_router, applications, cv, jobs
-│   ├── services/               # ai_service, adzuna, reed, jsearch, remotive, …
+│   ├── services/               # ai_service, cv_parser and one module per job source
+│   ├── tests/                  # pytest
 │   ├── models.py               # SQLAlchemy models
 │   ├── schemas.py              # Pydantic schemas
-│   ├── auth.py                 # JWT helpers
-│   └── utils.py                # Shared utilities (_utcnow)
+│   └── auth.py                 # JWT helpers
+├── docs/media/                 # README screenshots and GIF
 └── docker-compose.yml          # Local PostgreSQL
 ```
 
----
+</details>
 
-## Running Locally
+## Running locally
 
-### Prerequisites
+**You need:** Python 3.11+, Node.js 20+, Docker Desktop, and API keys for Anthropic, Adzuna and Reed (JSearch is optional).
 
-- Python 3.12+
-- Node.js 18+
-- Docker Desktop (for local PostgreSQL)
-- API keys: Anthropic, Adzuna, Reed (see Environment Variables below)
+**Database** (from the repo root)
 
-### Backend
+```bash
+POSTGRES_PASSWORD=postgres docker compose up -d   # PostgreSQL 16 on localhost:5432
+```
+
+**Backend**
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS/Linux
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env         # fill in your keys
-docker-compose up -d         # start PostgreSQL
+cp .env.example .env              # fill in your keys
 uvicorn main:app --reload
-# → http://localhost:8000
-# → http://localhost:8000/docs  (Swagger UI)
-# → http://localhost:8000/llms.txt  (LLM-readable API docs)
 ```
 
-### Frontend
+The API runs on http://localhost:8000, with Swagger UI at `/docs` and LLM-readable docs at `/llms.txt`.
+
+**Frontend**
 
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local   # set NEXT_PUBLIC_API_URL
+cp .env.local.example .env.local  # NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev
-# → http://localhost:3000
 ```
 
----
+Open http://localhost:3000.
 
-## Environment Variables
+**Tests**
 
-### `backend/.env`
+```bash
+cd backend && python -m pytest -q
+cd frontend && npm run test:mobile
+```
+
+<details>
+<summary><b>Environment variables</b></summary>
+
+`backend/.env`
 
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/searchwork
@@ -115,49 +181,49 @@ REED_API_KEY=
 RAPIDAPI_KEY=                # for JSearch
 ALLOWED_ORIGINS=http://localhost:3000
 FRONTEND_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=            # optional — enables Google OAuth
+GOOGLE_CLIENT_ID=            # optional, enables Google OAuth
 GOOGLE_CLIENT_SECRET=        # optional
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
-ENV=development              # removes Secure flag from cookies locally
+ENV=development              # removes the Secure flag from cookies locally
 ```
 
-### `frontend/.env.local`
+`frontend/.env.local`
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
----
+</details>
 
 ## API
 
-Full machine-readable docs at [`/llms.txt`](https://searchwork-bogdusik.vercel.app/llms.txt) (for LLMs) and interactive Swagger UI at `/docs`.
-
-Key endpoints:
+Full machine-readable docs are at [`/llms.txt`](https://searchwork-bogdusik.vercel.app/llms.txt), and Swagger UI is at `/docs`.
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/auth/register` | Create account |
-| `POST` | `/auth/login` | Email/password login |
-| `POST` | `/auth/refresh` | Rotate refresh token |
-| `GET` | `/auth/google/url` | Start Google OAuth flow |
-| `GET` | `/cv` | Fetch parsed CV profile |
-| `POST` | `/cv` | Upload and analyse CV (PDF) |
+| `POST` | `/auth/register` | Create an account |
+| `POST` | `/auth/login` | Email and password login |
+| `POST` | `/auth/refresh` | Rotate the refresh token |
+| `GET` | `/auth/google/url` | Start the Google OAuth flow |
+| `GET` | `/cv` | Fetch the parsed CV profile |
+| `POST` | `/cv` | Upload and analyse a CV (PDF) |
 | `POST` | `/cv/review` | Full ATS review for a target role |
-| `POST` | `/cv/cover-letter` | Generate (or fetch cached) cover letter |
-| `GET` | `/jobs?q=&locations=` | Search + AI-score jobs across all sources |
+| `POST` | `/cv/cover-letter` | Generate (or fetch the cached) cover letter |
+| `GET` | `/jobs?q=&locations=` | Search and AI-score jobs across all sources |
 | `GET` | `/applications` | List saved applications |
 | `POST` | `/applications` | Save a job as an application |
-| `PATCH` | `/applications/{id}` | Update application status |
-| `DELETE` | `/applications/{id}` | Remove application |
+| `PATCH` | `/applications/{id}` | Update an application's status |
+| `DELETE` | `/applications/{id}` | Remove an application |
 
----
+## What I learned
 
-## What I Learned
+- **Async SQLAlchemy in production:** `AsyncSession`, `selectinload` and avoiding `MissingGreenlet` errors that only show up at runtime.
+- **Claude for structured extraction:** prompts for skills, scoring and review that return parseable data rather than chat.
+- **Aggregating 11 inconsistent APIs:** different auth methods, salary fields and rate limits normalised into one schema, with partial failure as the normal case.
+- **Deployment across two platforms:** Vercel and Railway, cross-site cookies (`SameSite=None` in production) and CORS between them.
+- **XSS-safe auth:** the access token lives in a module-level variable instead of localStorage; the refresh token is in an httpOnly cookie.
+- **Accessibility:** combobox keyboard navigation, focus traps, skip links, `aria-live` regions and `role="tab"` patterns.
 
-- **Async SQLAlchemy in production** — `AsyncSession`, `selectinload`, avoiding `MissingGreenlet` pitfalls
-- **Claude API for structured extraction** — prompt engineering for skills, scoring, and review rather than generic chat
-- **Multi-source API aggregation** — normalising 11 inconsistent job APIs (different auth methods, salary fields, rate limits) into a single schema
-- **Full-stack deployment** — Vercel + Railway, cross-environment CORS, Railway Railpack build system
-- **XSS-safe auth** — access token in memory (module-level variable) instead of localStorage; refresh token in httpOnly cookie
-- **Accessibility** — WCAG 2.1 patterns: combobox keyboard nav, focus traps, skip links, `aria-live` regions, `role="tab"` patterns
+## License
+
+[MIT](LICENSE)
