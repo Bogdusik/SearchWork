@@ -1,7 +1,29 @@
 {
   "permissions": {
     "allow": ["Bash(just *)", "Bash(git status *)", "Bash(git diff *)", "Bash(git log *)"],
-    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./**/.env)", "Read(./**/.env.*)"]
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(./.env.development)",
+      "Read(./.env.*.local)",
+      "Read(./.env.railway)",
+      "Read(./.env.render)",
+      "Read(./backend/.env)",
+      "Read(./backend/.env.local)",
+      "Read(./backend/.env.production)",
+      "Read(./backend/.env.development)",
+      "Read(./backend/.env.*.local)",
+      "Read(./backend/.env.railway)",
+      "Read(./backend/.env.render)",
+      "Read(./frontend/.env)",
+      "Read(./frontend/.env.local)",
+      "Read(./frontend/.env.production)",
+      "Read(./frontend/.env.development)",
+      "Read(./frontend/.env.*.local)",
+      "Read(./frontend/.env.railway)",
+      "Read(./frontend/.env.render)"
+    ]
   },
   "hooks": {
     "PreToolUse": [

@@ -18,8 +18,8 @@ function block(reason) {
   process.exit(2);
 }
 
-// .env, .env.local, *.pem, id_rsa*, credentials(.json). .env.example is allowed.
-const SECRET_FILE = /(^|\/)(\.env(\.(?!example$)[^/]*)?|[^/]*\.pem|id_rsa[^/]*|credentials(\.json)?)$/;
+// .env, .env.local, .env.production.local, *.pem, id_rsa*, credentials(.json). Names ending in .example are allowed.
+const SECRET_FILE = /(^|\/)(\.env(\.(?!(?:[^/]*\.)?example$)[^/]*)?|[^/]*\.pem|id_rsa[^/]*|credentials(\.json)?)$/;
 
 if (tool === 'Edit' || tool === 'Write' || tool === 'MultiEdit') {
   const path = args.file_path ?? '';
@@ -38,7 +38,7 @@ if (tool === 'Bash') {
     [/\bgit\s+commit\b[^\n]*--amend/, 'amend rewrites history'],
     [/\bgit\s+checkout\s+(--\s+)?\.(\s|$)/, 'this discards all working tree changes'],
     [/\brm\s+-[a-zA-Z]*[rR][a-zA-Z]*\s+(\/|~|\$HOME)(\s|$)/, 'recursive delete of a root or home path'],
-    [/\b(cat|less|more|head|tail|type|bat)\b[^|;&\n]*\.env(?!\.example)(\.\w+)?(\s|$|"|')/, 'reading .env files is not allowed'],
+    [/\b(cat|less|more|head|tail|type|bat)\b[^|;&\n]*\.env(?!(?:\.[\w-]+)*\.example(?:\s|$|"|'))(\.[\w-]+)*(\s|$|"|')/, 'reading .env files is not allowed'],
   ];
   for (const [pattern, reason] of rules) {
     if (pattern.test(cmd)) block(reason);

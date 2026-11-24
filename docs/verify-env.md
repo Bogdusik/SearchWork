@@ -50,18 +50,37 @@ just dev-web        # cd frontend && npm run dev
 
 `frontend/.env.local` is optional locally: `frontend/lib/api.ts` falls back to `http://localhost:8000`.
 
-## 4. Flows that need real API keys
+## 4. Environment variables and the flows that need them
 
-| Flow | Endpoint | Needs |
-|---|---|---|
-| CV upload and skill extraction | `POST /cv` | Anthropic key |
-| CV review | `POST /cv/review` | Anthropic key |
-| Cover letter | `POST /cv/cover-letter` | Anthropic key |
-| Job search and match scoring | `GET /jobs` | Adzuna and Reed keys, Anthropic key |
+**Startup gate:** `backend/main.py` refuses to start if any of the six variables marked **required** is empty. A non-empty placeholder passes the gate, so a key you do not have yet can stay as the `.env.example` placeholder. Only the flows that call that service break.
 
-These work without keys: register, login, refresh, logout, `/auth/me`, and the applications tracker (`/applications` CRUD with a synthetic job body).
+| Variable | File | Needed by | Where to get the value | Missing or placeholder in `/verify` |
+|---|---|---|---|---|
+| `DATABASE_URL` **required** | `backend/.env` | everything (auth, CV upload, job search, applications) | Local: `postgresql+asyncpg://postgres:postgres@localhost:5432/searchwork` (password matches `POSTGRES_PASSWORD=postgres` in section 1). Use `localhost`, not `127.0.0.1`: `database.py` turns on SSL for any URL without the string `localhost`, and local Postgres has no SSL. | Blocker. All criteria `Not tested` ("backend cannot start / database unreachable") |
+| `SECRET_KEY` **required** | `backend/.env` | auth: JWT signing, Google OAuth `state` | Generate: `python3 -c "import secrets; print(secrets.token_hex(32))"` | Blocker. All criteria `Not tested` ("backend cannot start") |
+| `ANTHROPIC_API_KEY` **required** | `backend/.env` | CV upload (`POST /cv`, skill extraction), CV review, cover letter, match scoring in job search | Claude Console (platform.claude.com, formerly console.anthropic.com) → API keys | Placeholder: `Not tested` for CV upload, CV review, cover letter and any match-score criterion. See the note below. |
+| `ADZUNA_APP_ID` **required** | `backend/.env` | job search (Adzuna source) | developer.adzuna.com → register → dashboard shows App ID and key | Placeholder: `Not tested` only for criteria that name Adzuna results. Search still returns jobs from the free sources. |
+| `ADZUNA_APP_KEY` **required** | `backend/.env` | job search (Adzuna source) | same as above | same as above |
+| `REED_API_KEY` **required** | `backend/.env` | job search (Reed source) | reed.co.uk/developers → request a Jobseeker API key | Placeholder: `Not tested` only for criteria that name Reed results |
+| `RAPIDAPI_KEY` | `backend/.env` | job search (JSearch source only) | rapidapi.com → subscribe to the JSearch API (free tier) → `X-RapidAPI-Key` | Optional. Empty means the source is skipped silently. Never a reason for `Not tested`. |
+| `ENV` | `backend/.env` | auth cookies, debug router | Set `development` locally | Optional locally. `development` gives a non-`Secure`, `SameSite=Lax` refresh cookie and mounts the debug router. Any other value makes the cookie `Secure; SameSite=None`. |
+| `GOOGLE_CLIENT_ID` | `backend/.env` | auth: Google sign-in only | Google Cloud Console → APIs & Services → Credentials → OAuth client ID (Web application) | Google sign-in is out of scope (section 5). Empty: `/auth/google/url` returns 503. Mark `Not tested`. |
+| `GOOGLE_CLIENT_SECRET` | `backend/.env` | auth: Google sign-in only | same OAuth client | same as above |
+| `GOOGLE_REDIRECT_URI` | `backend/.env` | auth: Google sign-in only | `http://localhost:8000/auth/google/callback`, also added as an authorised redirect URI on the OAuth client | Default is the same value. Never a reason for `Not tested`. |
+| `FRONTEND_URL` | `backend/.env` | auth: redirect after Google sign-in | `http://localhost:3000` | Default is the same value |
+| `ALLOWED_ORIGINS` | `backend/.env` (not in `.env.example`) | CORS for every browser call | Leave unset locally. The default is `http://localhost:3000`. | Default is fine locally |
+| `POSTGRES_PASSWORD` | `backend/.env.example` | nothing in the backend code | Docker Compose reads it from the shell or a root `.env`, not from `backend/.env` (see section 1) | Not read by the app |
+| `NEXT_PUBLIC_API_URL` | `frontend/.env.local` | every frontend call (`lib/api.ts`, `lib/auth-context.tsx`) and the CSP `connect-src` (`next.config.ts`) | `http://localhost:8000` | Optional. The fallback is the same value. |
 
-`/verify` cannot see whether keys are real, because it never reads `.env`. When a key-dependent flow fails with an upstream or authentication error (5xx from `/cv`, an Anthropic or Adzuna/Reed auth error in the backend log, or a search that fails on every source), mark those criteria `Not tested` with the reason "API keys missing or placeholder". Do not mark them `Fail`.
+These work with placeholder keys: register, login, refresh, logout, `/auth/me`, and the applications tracker (`/applications` CRUD with a synthetic job body).
+
+`/verify` cannot see whether keys are real, because it never reads `.env`. How a placeholder key shows up at runtime:
+
+- **CV upload** (`POST /cv`): the Anthropic error is not caught, so the endpoint returns 500. CV review and cover letter return 500 with "... failed. Please try again."
+- **Match scoring** (`GET /jobs`): Anthropic errors are swallowed and every job gets `match_score: 0` with empty `matched_skills`. If a CV is uploaded and every score is 0, treat the Anthropic key as a placeholder.
+- **Adzuna / Reed**: each source fails independently. The error appears in the backend log as `Job service error`. The search still returns jobs from the keyless sources (Remotive, Jobicy, Arbeitnow and others), so an empty Adzuna or Reed result list is not a failure of the search.
+
+In these cases mark the affected criteria `Not tested` with the reason "API keys missing or placeholder". Do not mark them `Fail`.
 
 Rate limits: `/jobs` allows 10 requests a minute, and `/auth/register` and `/auth/login` allow 20 a minute each, per client IP.
 
