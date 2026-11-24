@@ -1,0 +1,16 @@
+# Install once: `lefthook install`.
+# `root` makes {staged_files} relative to that folder, so tool configs are found.
+pre-commit:
+  parallel: true
+  commands:
+    web-lint:
+      root: "frontend/"
+      glob: "*.{ts,tsx,js,jsx}"
+      run: npx eslint --max-warnings=0 {staged_files}
+    no-secrets:
+      run: git diff --cached --name-only | grep -E '(^|/)\.env($|\.)' | grep -v '\.example$' && exit 1 || exit 0
+
+pre-push:
+  commands:
+    evals-fast:
+      run: node scripts/run-evals.mjs --profile fast

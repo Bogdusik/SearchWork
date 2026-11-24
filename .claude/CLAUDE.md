@@ -2,6 +2,7 @@
 
 Personal job-tracking app for UK graduate/junior developer roles.
 CV upload → AI skill extraction → job search (Adzuna + Reed) → AI match scoring → application tracking.
+Deploy: Vercel (web), Railway (api + db).
 
 ## Active Learning Session
 
@@ -17,19 +18,19 @@ Bohdan is working through a Claude Code deep-dive curriculum using this project 
 - **AI:** Claude API (CV analysis + job match scoring)
 - **Job APIs:** Adzuna, Reed.co.uk
 
-## Dev Commands
+## Layout
+- `frontend/` Next.js 16 App Router app (`app/`, `components/`, `lib/api.ts`), Playwright mobile tests in `frontend/tests/mobile`
+- `backend/` FastAPI app, flat layout (`main.py`, `routers/`, `services/`, `models.py`, `schemas.py`), tests in `backend/tests` (SQLite via `conftest.py`)
+- `docs/specs/` active specs (temporary, deleted on close), `docs/media/` README assets
+- `evals/` + `scripts/` deterministic checks and tooling
+- `docker-compose.yml` local PostgreSQL 16 (`db` service)
 
-**Frontend:**
-```bash
-cd frontend && npm run dev
-```
-
-**Backend:**
-```powershell
-cd "C:\Users\bogdy\OneDrive\Personal Files\Repos\SearchWork\backend"
-.\venv\Scripts\activate
-uvicorn main:app --reload
-```
+## Commands
+Always use `just`. Do not guess raw commands.
+- `just dev-web` / `just dev-api` run locally (`dev-api` needs `backend/venv`)
+- `just lint` (frontend ESLint), `just typecheck`, `just test` (backend pytest), `just build`, `just e2e` (Playwright mobile)
+- `just evals fast` quick gate (lint, types, backend tests)
+- `just evals full` fast + build + e2e
 
 **Database (Docker):** managed manually by user — do not touch Docker config.
 
@@ -91,13 +92,33 @@ backend/
 - **CORS:** frontend runs on :3000, backend on :8000. CORS is configured in `main.py` — if adding a new origin, update there.
 - **CV file storage:** CV is stored as binary in the DB (not on disk). `cv_router` handles upload/retrieve via `application/octet-stream`.
 
-## Test Commands
+## Hard rules
+- Never commit, push, amend, reset or rebase unless I explicitly ask.
+- Never say work is done without a passing `just evals fast` in this session. Show the result.
+- Never read, print or commit secrets. `.env*` is off limits, `.env.example` is fine.
+- Never weaken a test to make it pass. Fix the code, or tell me the test is wrong and why.
+- Do not touch files outside the task scope. Do not overwrite my uncommitted edits.
+- Tests use synthetic data only. No real CVs, emails or tokens in fixtures.
 
-```powershell
-cd backend
-pytest tests/ -v                          # all tests
-pytest tests/test_jobs_router.py -v       # job search tests
-pytest tests/test_applications_router.py  # application CRUD
-pytest tests/test_ai_service.py -v        # AI/Claude service
-```
+## Code style
+- Self-documenting names. Comment only the non-obvious "why".
+- No spec ids (AC1, P2) in code or comments.
+- Smallest change that satisfies the task. No drive-by refactors.
+
+## Stop conditions (write a blocker, do not improvise)
+- 3 failed repair attempts on one task
+- missing secret, service or access
+- product decision is unclear and the code cannot answer it
+- the change needs work outside the agreed scope
+
+## Workflow: pick a track by risk
+| Change | Track |
+|---|---|
+| No behavior change (rename, typo, formatting) | Just do it, run `just evals fast` |
+| Small, low risk, one package | `/spec` short, then `/implement` |
+| Auth, tokens, user data, migrations, anything public-facing | `/spec` full, `/implement`, `/spec-review`, `/verify` |
+
+Flow: `/spec` -> I approve -> `/implement <spec>` -> `/spec-review` -> `/verify` -> I approve -> close.
+Close = move 3-5 lines of outcome into `docs/CHANGELOG.md`, delete the spec.
+"Implemented" and "deployed" are different. Never write "deployed" unless I confirmed a deploy.
 

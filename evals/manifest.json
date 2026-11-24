@@ -1,0 +1,23 @@
+{
+  "checks": {
+    "lint-web":      { "cmd": "npm", "args": ["run", "lint"], "cwd": "frontend" },
+    "typecheck-web": { "cmd": "npx", "args": ["tsc", "--noEmit"], "cwd": "frontend" },
+    "test-api":      {
+      "cmd": "venv/bin/python", "args": ["-m", "pytest", "-q"], "cwd": "backend",
+      "env": {
+        "DATABASE_URL": "postgresql+asyncpg://ci:ci@localhost:5432/ci",
+        "ANTHROPIC_API_KEY": "ci-key",
+        "ADZUNA_APP_ID": "ci",
+        "ADZUNA_APP_KEY": "ci",
+        "REED_API_KEY": "ci"
+      }
+    },
+    "build-web":     { "cmd": "npm", "args": ["run", "build"], "cwd": "frontend" },
+    "e2e":           { "cmd": "npm", "args": ["run", "test:mobile", "--", "--reporter=line"], "cwd": "frontend" }
+  },
+  "profiles": {
+    "test": ["test-api"],
+    "fast": ["lint-web", "typecheck-web", "test-api"],
+    "full": ["lint-web", "typecheck-web", "test-api", "build-web", "e2e"]
+  }
+}

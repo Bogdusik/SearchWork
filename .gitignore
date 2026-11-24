@@ -33,7 +33,6 @@ Thumbs.db
 .idea/
 
 # Claude Code local config (machine-specific)
-.claude/settings.json
 .claude/settings.local.json
 .playwright-mcp/
 .superpowers/
@@ -48,3 +47,7 @@ docs/superpowers/
 
 # Personal Claude Code session notes (kept locally)
 PROGRESS.md
+
+# AI kit
+.claude/state/
+evals/results/
