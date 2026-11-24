@@ -197,7 +197,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## API
 
-Full machine-readable docs are at [`/llms.txt`](https://searchwork-bogdusik.vercel.app/llms.txt), and Swagger UI is at `/docs`.
+Full machine-readable docs are served by the API at `/llms.txt`, and Swagger UI is at `/docs`.
+<!-- TODO: link to the public backend /llms.txt once the production API URL is confirmed (the frontend domain returns 404) -->
 
 | Method | Path | Description |
 |---|---|---|
