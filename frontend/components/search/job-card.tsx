@@ -3,7 +3,7 @@
 import type { JobSearchResult } from '@/types'
 import { api } from '@/lib/api'
 import { STATUS_COLORS, STATUS_LABELS } from '@/lib/constants'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface JobCardProps {
   job: JobSearchResult
@@ -26,10 +26,13 @@ export function JobCard({ job, initialStatus, onCoverLetter }: JobCardProps) {
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [showWhy, setShowWhy] = useState(false)
+  const [prevInitialStatus, setPrevInitialStatus] = useState(initialStatus)
 
-  useEffect(() => {
+  // A late-arriving status from /applications overrides the card, but a falsy prop never resets it.
+  if (initialStatus !== prevInitialStatus) {
+    setPrevInitialStatus(initialStatus)
     if (initialStatus) setStatus(initialStatus as CardStatus)
-  }, [initialStatus])
+  }
 
   const apply = async () => {
     if (actionLoading) return
