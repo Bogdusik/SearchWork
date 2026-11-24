@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useSyncExternalStore, ReactNode } from "react";
 import { api, setToken } from "@/lib/api";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -19,19 +19,26 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const subscribeToNothing = () => () => {};
+const readAuthedCookie = () => document.cookie.includes("sw_authed=1");
+const unknownOnServer = () => null;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [ready, setReady] = useState(false);
+  const [sessionRestored, setSessionRestored] = useState(false);
   const refreshStarted = useRef(false);
 
-  useEffect(() => {
-    if (refreshStarted.current) return;
-    refreshStarted.current = true;
+  // Bootstrap decides once from the first client read; login() later writing the cookie must not reopen it.
+  const authedCookie = useSyncExternalStore(subscribeToNothing, readAuthedCookie, unknownOnServer);
+  const [cookieAtBoot, setCookieAtBoot] = useState<boolean | null>(null);
+  if (cookieAtBoot === null && authedCookie !== null) {
+    setCookieAtBoot(authedCookie);
+  }
+  const ready = cookieAtBoot === false || sessionRestored;
 
-    if (!document.cookie.includes("sw_authed=1")) {
-      setReady(true);
-      return;
-    }
+  useEffect(() => {
+    if (cookieAtBoot !== true || refreshStarted.current) return;
+    refreshStarted.current = true;
 
     let willRedirect = false;
     api.auth.refresh()
@@ -47,9 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.href = "/login";
       })
       .finally(() => {
-        if (!willRedirect) setReady(true);
+        if (!willRedirect) setSessionRestored(true);
       });
-  }, []);
+  }, [cookieAtBoot]);
 
   const login = useCallback((tok: string, usr: AuthUser) => {
     setToken(tok);
