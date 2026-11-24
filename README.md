@@ -81,15 +81,15 @@ flowchart TB
 
 ## Tech stack
 
-| Layer | Tech |
-|---|---|
-| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Framer Motion, Spline 3D |
-| Backend | FastAPI, SQLAlchemy 2.0 async, Pydantic v2, slowapi |
-| Database | PostgreSQL 16 (asyncpg) |
-| AI | Claude API: CV parsing, match scoring, CV review, cover letters |
-| Auth | JWT (PyJWT) + Google OAuth 2.0, bcrypt; access token in memory, refresh token in an httpOnly cookie |
+| Layer        | Tech                                                                                                            |
+| ------------ | --------------------------------------------------------------------------------------------------------------- |
+| Frontend     | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Framer Motion, Spline 3D                         |
+| Backend      | FastAPI, SQLAlchemy 2.0 async, Pydantic v2, slowapi                                                             |
+| Database     | PostgreSQL 16 (asyncpg)                                                                                         |
+| AI           | Claude API: CV parsing, match scoring, CV review, cover letters                                                 |
+| Auth         | JWT (PyJWT) + Google OAuth 2.0, bcrypt; access token in memory, refresh token in an httpOnly cookie             |
 | Tests and CI | pytest (backend), type-check and build (frontend), Playwright mobile layout tests; GitHub Actions on every push |
-| Deployment | Vercel (frontend), Railway (backend + PostgreSQL) |
+| Deployment   | Vercel (frontend), Railway (backend + PostgreSQL)                                                               |
 
 <details>
 <summary><b>Project structure</b></summary>
@@ -197,23 +197,23 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## API
 
-Full machine-readable docs are at [`/llms.txt`](https://searchwork-bogdusik.vercel.app/llms.txt), and Swagger UI is at `/docs`.
+Full machine-readable docs are served by the API at [`/llms.txt`](https://searchwork-production.up.railway.app/llms.txt), and Swagger UI is at [`/docs`](https://searchwork-production.up.railway.app/docs).
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/auth/register` | Create an account |
-| `POST` | `/auth/login` | Email and password login |
-| `POST` | `/auth/refresh` | Rotate the refresh token |
-| `GET` | `/auth/google/url` | Start the Google OAuth flow |
-| `GET` | `/cv` | Fetch the parsed CV profile |
-| `POST` | `/cv` | Upload and analyse a CV (PDF) |
-| `POST` | `/cv/review` | Full ATS review for a target role |
-| `POST` | `/cv/cover-letter` | Generate (or fetch the cached) cover letter |
-| `GET` | `/jobs?q=&locations=` | Search and AI-score jobs across all sources |
-| `GET` | `/applications` | List saved applications |
-| `POST` | `/applications` | Save a job as an application |
-| `PATCH` | `/applications/{id}` | Update an application's status |
-| `DELETE` | `/applications/{id}` | Remove an application |
+| Method   | Path                  | Description                                 |
+| -------- | --------------------- | ------------------------------------------- |
+| `POST`   | `/auth/register`      | Create an account                           |
+| `POST`   | `/auth/login`         | Email and password login                    |
+| `POST`   | `/auth/refresh`       | Rotate the refresh token                    |
+| `GET`    | `/auth/google/url`    | Start the Google OAuth flow                 |
+| `GET`    | `/cv`                 | Fetch the parsed CV profile                 |
+| `POST`   | `/cv`                 | Upload and analyse a CV (PDF)               |
+| `POST`   | `/cv/review`          | Full ATS review for a target role           |
+| `POST`   | `/cv/cover-letter`    | Generate (or fetch the cached) cover letter |
+| `GET`    | `/jobs?q=&locations=` | Search and AI-score jobs across all sources |
+| `GET`    | `/applications`       | List saved applications                     |
+| `POST`   | `/applications`       | Save a job as an application                |
+| `PATCH`  | `/applications/{id}`  | Update an application's status              |
+| `DELETE` | `/applications/{id}`  | Remove an application                       |
 
 ## What I learned
 
