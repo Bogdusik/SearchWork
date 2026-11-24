@@ -36,17 +36,31 @@ Always use `just`. Do not guess raw commands.
 
 ## Environment Variables
 
+Names only. Which flows need each one, where the values come from and the local defaults: `docs/verify-env.md` section 4. Templates: `backend/.env.example`, `frontend/.env.local.example`.
+
 **backend/.env**
 ```
+# required: main.py refuses to start if any is empty
 DATABASE_URL=
+SECRET_KEY=
 ANTHROPIC_API_KEY=
 ADZUNA_APP_ID=
 ADZUNA_APP_KEY=
 REED_API_KEY=
+
+# optional
 RAPIDAPI_KEY=
+ENV=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
+FRONTEND_URL=
+ALLOWED_ORIGINS=
 ```
 
-**frontend/.env.local**
+`POSTGRES_PASSWORD` is listed in `backend/.env.example` but the backend never reads it. Docker Compose takes it from the shell.
+
+**frontend/.env.local** (optional locally)
 ```
 NEXT_PUBLIC_API_URL=
 ```
