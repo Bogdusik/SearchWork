@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -39,7 +40,8 @@ def create_access_token(user_id: int) -> str:
 
 
 def create_refresh_token(user_id: int) -> str:
-    payload = {"sub": str(user_id), "exp": _utcnow() + _REFRESH_EXPIRES}
+    # jti keeps tokens unique when two are issued for one user in the same second
+    payload = {"sub": str(user_id), "exp": _utcnow() + _REFRESH_EXPIRES, "jti": secrets.token_urlsafe(16)}
     return jwt.encode(payload, _SECRET, algorithm=_ALGORITHM)
 
 
