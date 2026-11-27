@@ -67,8 +67,11 @@ just dev-web        # cd frontend && npm run dev
 | `GOOGLE_CLIENT_ID` | `backend/.env` | auth: Google sign-in only | Google Cloud Console → APIs & Services → Credentials → OAuth client ID (Web application) | Google sign-in is out of scope (section 5). Empty: `/auth/google/url` returns 503. Mark `Not tested`. |
 | `GOOGLE_CLIENT_SECRET` | `backend/.env` | auth: Google sign-in only | same OAuth client | same as above |
 | `GOOGLE_REDIRECT_URI` | `backend/.env` | auth: Google sign-in only | `http://localhost:8000/auth/google/callback`, also added as an authorised redirect URI on the OAuth client | Default is the same value. Never a reason for `Not tested`. |
-| `FRONTEND_URL` | `backend/.env` | auth: redirect after Google sign-in | `http://localhost:3000` | Default is the same value |
+| `FRONTEND_URL` | `backend/.env` | auth: redirect after Google sign-in; click link of the "+N more matches" alert push | `http://localhost:3000` | Default is the same value |
 | `ALLOWED_ORIGINS` | `backend/.env` (not in `.env.example`) | CORS for every browser call | Leave unset locally. The default is `http://localhost:3000`. | Default is fine locally |
+| `NTFY_URL` | `backend/.env` (commented out in `.env.example`) | job alerts: push delivery | Leave unset to use `https://ntfy.sh`, or a self-hosted ntfy URL | Optional. Default is public ntfy.sh. Pushes to a topic can be checked live in the browser at `https://ntfy.sh/<topic>`. |
+| `ALERT_SCAN_INTERVAL_HOURS` | `backend/.env` | job alerts: how old `last_scan_at` must be before a user is scanned again | Leave unset (6). For a live check set a small value such as `0.05` (3 minutes). | Optional. Accepts decimals. The loop itself always ticks every 15 minutes and once at startup. |
+| `ALERT_SCHEDULER_ENABLED` | `backend/.env` | job alerts: background scan loop | Leave unset (on). `false` turns the loop off; the `/alerts` endpoints still work. | Optional. With the loop on, starting the backend scans every enabled, due user right away and calls the job sources and Claude. |
 | `POSTGRES_PASSWORD` | `backend/.env.example` | nothing in the backend code | Docker Compose reads it from the shell or a root `.env`, not from `backend/.env` (see section 1) | Not read by the app |
 | `NEXT_PUBLIC_API_URL` | `frontend/.env.local` | every frontend call (`lib/api.ts`, `lib/auth-context.tsx`) and the CSP `connect-src` (`next.config.ts`) | `http://localhost:8000` | Optional. The fallback is the same value. |
 

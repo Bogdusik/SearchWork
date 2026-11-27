@@ -89,6 +89,15 @@ export const api = {
       return req<import('@/types').JobSearchResult[]>(`/jobs?${params}`, { signal })
     },
   },
+  alerts: {
+    get: () => req<import('@/types').AlertSettings | null>('/alerts'),
+    save: (settings: import('@/types').AlertSettingsInput) =>
+      req<import('@/types').AlertSettings>('/alerts', {
+        method: 'PUT',
+        body: JSON.stringify(settings),
+      }),
+    sendTest: () => req<void>('/alerts/test', { method: 'POST' }),
+  },
   applications: {
     list: () => req<import('@/types').Application[]>('/applications'),
     create: (job: import('@/types').JobSearchResult, status: import('@/types').ApplicationStatus) =>
@@ -104,4 +113,16 @@ export const api = {
     delete: (id: number) =>
       req<void>(`/applications/${id}`, { method: 'DELETE' }),
   },
+}
+
+export function apiErrorDetail(err: unknown, fallback: string): string {
+  if (!(err instanceof Error)) return fallback
+  const body = err.message.replace(/^API error \d+: /, '')
+  try {
+    const parsed: unknown = JSON.parse(body)
+    if (parsed && typeof parsed === 'object' && 'detail' in parsed && typeof parsed.detail === 'string') {
+      return parsed.detail
+    }
+  } catch {}
+  return fallback
 }

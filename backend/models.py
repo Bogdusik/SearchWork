@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Boolean, Integer, String, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy import TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
@@ -98,3 +98,27 @@ class Application(Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
     job: Mapped["SavedJob"] = relationship("SavedJob", back_populates="application")
+
+
+class AlertSettings(Base):
+    __tablename__ = "alert_settings"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    query: Mapped[str] = mapped_column(String(200))
+    locations: Mapped[list[str]] = mapped_column(JSONList)
+    min_score: Mapped[int] = mapped_column(Integer)
+    ntfy_topic: Mapped[str] = mapped_column(String(64))
+    last_scan_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    baseline_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+class SeenJob(Base):
+    __tablename__ = "seen_jobs"
+    __table_args__ = (UniqueConstraint("user_id", "external_id", "source", name="uq_seen_jobs_user_job"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    external_id: Mapped[str] = mapped_column(String)
+    source: Mapped[str] = mapped_column(String)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)

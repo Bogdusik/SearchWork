@@ -6,6 +6,7 @@ import type { CVProfile, CVReview } from '@/types'
 import { UploadZone } from '@/components/cv/upload-zone'
 import { SkillsDisplay } from '@/components/cv/skills-display'
 import { CvReview } from '@/components/cv/cv-review'
+import { AlertSettings } from '@/components/cv/alert-settings'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 export default function CVPage() {
@@ -51,6 +52,8 @@ export default function CVPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <AlertSettings />
     </div>
   )
 }

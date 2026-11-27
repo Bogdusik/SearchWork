@@ -56,6 +56,9 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
 FRONTEND_URL=
 ALLOWED_ORIGINS=
+NTFY_URL=
+ALERT_SCAN_INTERVAL_HOURS=
+ALERT_SCHEDULER_ENABLED=
 ```
 
 `POSTGRES_PASSWORD` is listed in `backend/.env.example` but the backend never reads it. Docker Compose takes it from the shell.
