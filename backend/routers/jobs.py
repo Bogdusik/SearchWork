@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from auth import get_current_user
+from log_redaction import redact_secrets
 from database import get_db
 from models import CVProfile, User
 from schemas import JobSearchResult
@@ -111,7 +112,7 @@ async def _fetch_for_location(query: str, where: str) -> list[dict]:
     jobs: list[dict] = []
     for result in results:
         if isinstance(result, Exception):
-            logger.warning("Job service error for location %r: %s", where, result)
+            logger.warning("Job service error for location %r: %s", where, redact_secrets(str(result)))
         elif isinstance(result, list):
             jobs += result
     return jobs

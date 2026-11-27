@@ -26,6 +26,10 @@ if _missing:
 from database import engine
 import models
 from routers import cv, jobs, applications, debug, auth_router
+from log_redaction import install_secret_redaction
+
+# httpx logs every request URL at INFO, and the Adzuna URL carries app_id/app_key.
+install_secret_redaction("httpx", "httpcore")
 
 limiter = Limiter(key_func=get_remote_address)
 
