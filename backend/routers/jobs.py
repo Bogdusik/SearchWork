@@ -117,20 +117,10 @@ async def _fetch_for_location(query: str, where: str) -> list[dict]:
     return jobs
 
 
-@router.get("/jobs", response_model=list[JobSearchResult])
-@limiter.limit("10/minute")
-async def search_jobs(
-    request: Request,
-    q: str = Query(..., min_length=1),
-    locations: list[str] = Query(default=[]),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    cv_skills = await get_cv_profile(db, current_user.id)
-
+async def collect_filtered_jobs(query: str, locations: list[str]) -> list[dict]:
     search_locations = locations if locations else DEFAULT_LOCATIONS
     location_results = await asyncio.gather(
-        *[_fetch_for_location(q, loc) for loc in search_locations],
+        *[_fetch_for_location(query, loc) for loc in search_locations],
         return_exceptions=True,
     )
 
@@ -145,7 +135,21 @@ async def search_jobs(
                 seen.add(key)
                 all_jobs.append(job)
 
-    all_jobs = [j for j in all_jobs if _is_uk_job(j) and _is_eligible(j) and _is_junior_level(j)]
+    return [j for j in all_jobs if _is_uk_job(j) and _is_eligible(j) and _is_junior_level(j)]
+
+
+@router.get("/jobs", response_model=list[JobSearchResult])
+@limiter.limit("10/minute")
+async def search_jobs(
+    request: Request,
+    q: str = Query(..., min_length=1),
+    locations: list[str] = Query(default=[]),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    cv_skills = await get_cv_profile(db, current_user.id)
+
+    all_jobs = await collect_filtered_jobs(q, locations)
 
     if not all_jobs:
         return []

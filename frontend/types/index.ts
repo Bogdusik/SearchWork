@@ -57,3 +57,15 @@ export interface CVReview {
   polish_issues: CVReviewItem[]
   priority_table: PriorityItem[]
 }
+
+export interface AlertSettingsInput {
+  enabled: boolean
+  query: string
+  locations: string[]
+  min_score: number
+  ntfy_topic: string
+}
+
+export interface AlertSettings extends AlertSettingsInput {
+  last_scan_at: string | null
+}

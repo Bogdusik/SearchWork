@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Literal
-from pydantic import BaseModel, EmailStr, Field
+from typing import Annotated, Literal
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
 
 STATUS = Literal["saved", "in_progress", "applied", "interview", "offer", "rejected"]
 
@@ -127,3 +127,36 @@ class CVReviewResponse(BaseModel):
     structural_issues: list[CVReviewItem]
     polish_issues: list[CVReviewItem]
     priority_table: list[PriorityItem]
+
+
+class AlertSettingsIn(BaseModel):
+    enabled: bool
+    query: str = Field(max_length=200)
+    locations: list[Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]] = Field(
+        default_factory=list, max_length=10
+    )
+    min_score: int = Field(ge=0, le=100)
+    ntfy_topic: str = Field(pattern=r"^[A-Za-z0-9_-]{8,64}$")
+
+    @field_validator("query")
+    @classmethod
+    def query_not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("query must not be empty")
+        return value
+
+    @field_validator("locations")
+    @classmethod
+    def drop_blank_locations(cls, value: list[str]) -> list[str]:
+        return [loc for loc in value if loc]
+
+
+class AlertSettingsOut(BaseModel):
+    enabled: bool
+    query: str
+    locations: list[str]
+    min_score: int
+    ntfy_topic: str
+    last_scan_at: datetime | None
+    model_config = ConfigDict(from_attributes=True)

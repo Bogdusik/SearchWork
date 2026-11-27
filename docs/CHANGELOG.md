@@ -2,6 +2,14 @@
 
 Outcomes of closed specs, newest first.
 
+## 2026-11-27: ntfy job alerts
+
+- New per-user job alerts: `GET/PUT /alerts` and `POST /alerts/test` (3/minute) store a search query, cities, minimum score and ntfy topic. A card on the CV page edits them and sends a test push. Validation errors on `/alerts` do not echo submitted values, and the topic never reaches logs.
+- A background loop in the API (`services/alert_scheduler.py`) ticks at startup and every 15 minutes, and scans each enabled user once per `ALERT_SCAN_INTERVAL_HOURS` (default 6). A PostgreSQL transaction-level advisory lock allows one tick at a time across processes. Missed intervals after sleep or downtime are not replayed.
+- A scan scores only jobs not yet in `seen_jobs` (at most 5 Claude calls at once). It pushes matches at or above the minimum score, top 5 plus one "+N more" push. Jobs whose scoring raised stay unseen and are retried next scan. The first scan, and the first scan after the query or cities change, is a silent baseline.
+- Two new tables, `alert_settings` and `seen_jobs`, created by `create_all`. `collect_filtered_jobs` was extracted in `routers/jobs.py` with no behaviour change. `/verify`: 21 criteria, 11 pass, 10 partial, 0 fail. Partial because the local Anthropic key is invalid, so scoring was checked against a mock.
+- Not deployed. Known follow-ups: Adzuna keys in job-source error logs (fixed separately), pushes lost when ntfy is down during a scan, non-UK jobs passing the location filter.
+
 ## 2026-11-24: Pin bcrypt to 4.0.1, unique refresh tokens (issue #9)
 
 - `backend/requirements.txt` pins `bcrypt==4.0.1` next to `passlib[bcrypt]==1.7.4`. Fresh installs had resolved bcrypt 5.0.0, which breaks passlib's self-test, so every register and password login returned 500. Existing `$2b$` hashes keep verifying.

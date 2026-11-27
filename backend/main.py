@@ -1,5 +1,6 @@
+import asyncio
 import os
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
@@ -25,7 +26,8 @@ if _missing:
 
 from database import engine
 import models
-from routers import cv, jobs, applications, debug, auth_router
+from routers import cv, jobs, applications, debug, auth_router, alerts
+from services import alert_scheduler
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -50,7 +52,12 @@ async def lifespan(app: FastAPI):
             "CREATE UNIQUE INDEX IF NOT EXISTS uq_cover_letters_user_job "
             "ON cover_letters(user_id, external_id, source)"
         ))
+    alert_task = asyncio.create_task(alert_scheduler.alert_loop()) if alert_scheduler.scheduler_enabled() else None
     yield
+    if alert_task:
+        alert_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await alert_task
 
 app = FastAPI(title="SearchWork API", lifespan=lifespan)
 app.state.limiter = limiter
@@ -70,6 +77,7 @@ app.include_router(auth_router.router)
 app.include_router(cv.router)
 app.include_router(jobs.router)
 app.include_router(applications.router)
+app.include_router(alerts.router)
 
 if os.getenv("ENV") == "development":
     app.include_router(debug.router)
@@ -172,6 +180,31 @@ PATCH /applications/{app_id}
 
 DELETE /applications/{app_id}
   Response: 204 No Content
+
+## Job alerts
+
+Push notifications through ntfy (https://ntfy.sh) for new jobs that match the user's CV.
+A background scan re-runs each enabled user's search every ALERT_SCAN_INTERVAL_HOURS (default 6),
+scores only jobs it has not seen before and pushes those with match_score >= min_score
+(top 5 individually, plus one "+N more" push). The first scan only records current jobs, no pushes.
+Users without an uploaded CV are skipped.
+
+GET /alerts
+  Response: AlertSettings object or null if never saved.
+  AlertSettings: {"enabled": bool, "query": str, "locations": [str], "min_score": int (0-100),
+    "ntfy_topic": str, "last_scan_at": "ISO datetime"|null}
+
+PUT /alerts
+  Body: {"enabled": bool, "query": str (1-200 chars), "locations": [str] (max 10, empty = default cities),
+         "min_score": int (0-100), "ntfy_topic": str (8-64 chars of A-Z a-z 0-9 _ -)}
+  Creates or replaces the user's settings. Response: AlertSettings. 422 on invalid input
+  (validation errors do not echo submitted values). Each location is at most 100 chars.
+  Changing query or locations restarts the silent first-scan baseline.
+
+POST /alerts/test
+  Rate limited: 3/minute per IP.
+  Sends one "SearchWork test" push to the user's topic.
+  Response: 204 No Content. 404 if no settings saved, 502 if ntfy cannot be reached.
 
 ## Utility
 
